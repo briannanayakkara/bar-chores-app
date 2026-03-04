@@ -9,6 +9,7 @@ export default defineConfig(({ mode: _mode }) => ({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV || ''),
   },
   envDir: '.',
   // Vite auto-loads .env.[mode] files — running `vite` loads .env.development,
