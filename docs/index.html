@@ -465,7 +465,7 @@
     <svg id="themeIcon" viewBox="0 0 24 24"></svg>
   </button>
   <h1>Bar Chores App</h1>
-  <p>Gamified bar staff task management — Application Flowchart v1.8.3</p>
+  <p>Gamified bar staff task management — Application Flowchart v1.8.5</p>
   <div class="badges">
     <span class="badge badge-sa">Super Admin</span>
     <span class="badge badge-va">Venue Admin</span>
@@ -488,7 +488,7 @@
   <div class="kb-hint"><span class="kb-key">Scroll</span> Zoom</div>
 </div>
 
-<footer>Bar Chores App v1.8.3 &mdash; March 2026</footer>
+<footer>Bar Chores App v1.8.5 &mdash; March 2026</footer>
 
 <!-- Fullscreen modal -->
 <div class="modal-overlay" id="modal">
@@ -1123,7 +1123,8 @@ const diagrams = [
         P4 --> P5["vercel deploy --prebuilt --prod"]
     end
 
-    D5 --> DEV_URL["Preview URL<br/>Bar Chores DEV"]
+    D5 --> ALIAS["vercel alias → bar-chores-dev.vercel.app"]
+    ALIAS --> DEV_URL["bar-chores-dev.vercel.app<br/>Bar Chores DEV"]
     P5 --> PROD_URL["bar-chores-app.vercel.app<br/>Bar Chores"]
 
     DEV_URL --> DEV_SB["DEV Supabase<br/>drwflvxdvwtjzuqxfort<br/>Dummy data"]
@@ -1140,7 +1141,8 @@ const diagrams = [
       'CI_PROD': { title: 'PROD Pipeline', body: 'Triggered on every push to main. Runs type check, builds with Vercel CLI, deploys to production environment.' },
       'D2': { title: 'Type Check Gate', body: 'Runs npx tsc -b before Vercel build. Stops the pipeline if any TypeScript errors exist — prevents broken deploys.' },
       'P2': { title: 'Type Check Gate', body: 'Same type check for production. No code with TS errors reaches production.' },
-      'DEV_URL': { title: 'DEV Preview URL', body: 'Auto-generated Vercel preview URL. App title shows "Bar Chores [DEV]". Orange DEV badge visible.' },
+      'ALIAS': { title: 'Stable Dev URL', body: 'GitHub Actions aliases each preview deploy to bar-chores-dev.vercel.app so the dev URL is always the same.' },
+      'DEV_URL': { title: 'DEV URL', body: 'bar-chores-dev.vercel.app — stable alias. App title shows "Bar Chores [DEV]". Yellow DEV banner visible.' },
       'PROD_URL': { title: 'Production URL', body: 'bar-chores-app.vercel.app. Clean "Bar Chores" title. No DEV badge.' },
       'DEV_SB': { title: 'DEV Supabase', body: 'Separate Supabase project with dummy data (2 venues, 12 users, 40 tasks). Safe to experiment with.' },
       'PROD_SB': { title: 'PROD Supabase', body: 'Production Supabase project with real venue data, real staff, real points. Never modified by dev work.' },

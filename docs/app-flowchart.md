@@ -394,7 +394,8 @@ flowchart TD
         P4 --> P5["vercel deploy --prebuilt --prod"]
     end
 
-    D5 --> DEV_URL["Preview URL<br/>Bar Chores DEV"]
+    D5 --> ALIAS["vercel alias → bar-chores-dev.vercel.app"]
+    ALIAS --> DEV_URL["bar-chores-dev.vercel.app<br/>Bar Chores DEV"]
     P5 --> PROD_URL["bar-chores-app.vercel.app<br/>Bar Chores"]
 
     DEV_URL --> DEV_SB["DEV Supabase<br/>drwflvxdvwtjzuqxfort<br/>Dummy data"]
@@ -495,4 +496,4 @@ erDiagram
 
 ---
 
-*Generated for Bar Chores App v1.8.3 — March 2026*
+*Generated for Bar Chores App v1.8.5 — March 2026*

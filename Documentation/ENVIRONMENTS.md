@@ -56,7 +56,7 @@ VITE_APP_TITLE=Bar Chores [DEV]
 
 ### Development Deployment
 - **Branch:** `develop`
-- **URL:** `https://bar-chores-dev.vercel.app` (or Vercel auto-generated preview URL)
+- **URL:** `https://bar-chores-dev.vercel.app` (stable alias via GitHub Actions)
 - **Environment variables:** set to development values in Vercel dashboard
 
 ### How to set per-environment variables in Vercel
@@ -73,11 +73,15 @@ VITE_APP_TITLE=Bar Chores [DEV]
 ```
 Push code to develop branch
         ↓
-GitHub Actions runs build check (npm run build)
+GitHub Actions (.github/workflows/deploy-dev.yml)
         ↓
-Vercel auto-deploys to DEV URL
+Checkout → npm ci → tsc -b (type check)
         ↓
-App shows [DEV] tag in title
+vercel pull --preview → vercel build → vercel deploy --prebuilt
+        ↓
+Alias to https://bar-chores-dev.vercel.app
+        ↓
+App shows DEV badge (yellow banner)
         ↓
 Connected to DEV Supabase (dummy data)
 ```
@@ -88,14 +92,20 @@ Pull Request: develop → main
         ↓
 Merge approved
         ↓
-GitHub Actions runs build check (npm run build)
+GitHub Actions (.github/workflows/deploy-prod.yml)
         ↓
-Vercel auto-deploys to PROD URL
+Checkout → npm ci → tsc -b (type check)
+        ↓
+vercel pull --production → vercel build --prod → vercel deploy --prebuilt --prod
+        ↓
+Deploys to https://bar-chores-app.vercel.app
         ↓
 App shows no tag — clean title "Bar Chores"
         ↓
 Connected to PROD Supabase (real live data)
 ```
+
+> **Note:** Vercel auto-deploy is disabled. All deployments go through GitHub Actions only. Vercel env vars (set in the dashboard) are pulled at build time via `vercel pull`.
 
 ---
 

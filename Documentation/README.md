@@ -2,8 +2,9 @@
 
 > Gamified bar staff task management — staff earn points for completing chores and redeem them for drink or bottle tickets. Multi-venue, mobile-first, built with React + Vite + TypeScript + Supabase + Tailwind CSS.
 
-**Version:** 1.8.3
+**Version:** 1.8.5
 **Live URL:** https://bar-chores-app.vercel.app
+**Dev URL:** https://bar-chores-dev.vercel.app
 
 ---
 
@@ -362,7 +363,7 @@ The app runs in two separate environments — **Production** and **Development**
 |---|---|---|
 | **Branch** | `main` | `develop` |
 | **Supabase** | `sepcdjmwdfjjieaxqoqn` (real data) | `drwflvxdvwtjzuqxfort` (dummy data) |
-| **Vercel URL** | `bar-chores-app.vercel.app` | Preview URL (auto-generated) |
+| **Vercel URL** | `bar-chores-app.vercel.app` | `bar-chores-dev.vercel.app` |
 | **App title** | Bar Chores | Bar Chores [DEV] |
 | **DEV badge** | Hidden | Visible orange badge |
 
