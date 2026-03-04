@@ -30,24 +30,24 @@
       --role-st-bg: #002918; --role-st-text: #6ee7b7; --role-st-border: #3ecf8e;
     }
     [data-theme="light"] {
-      --bg: #f8f8f8;
-      --bg-surface: #ffffff;
-      --bg-preview: #f1f1f1;
-      --border: #e5e5e5;
-      --border-hover: #d4d4d4;
-      --text: #171717;
-      --text-secondary: #525252;
-      --text-tertiary: #a0a0a0;
-      --accent: #3ecf8e;
-      --accent-tint: #ecfdf5;
-      --accent-glow: rgba(62, 207, 142, 0.12);
-      --modal-overlay: rgba(255, 255, 255, 0.92);
-      --scrollbar-track: #f8f8f8;
-      --scrollbar-thumb: #d4d4d4;
+      --bg: #eaeaea;
+      --bg-surface: #f5f5f5;
+      --bg-preview: #e0e0e0;
+      --border: #c8c8c8;
+      --border-hover: #aaaaaa;
+      --text: #1a1a1a;
+      --text-secondary: #444444;
+      --text-tertiary: #777777;
+      --accent: #30a46c;
+      --accent-tint: #d6f5e5;
+      --accent-glow: rgba(48, 164, 108, 0.15);
+      --modal-overlay: rgba(30, 30, 30, 0.60);
+      --scrollbar-track: #e0e0e0;
+      --scrollbar-thumb: #b0b0b0;
       /* Role colors */
-      --role-sa-bg: #ede9fe; --role-sa-text: #5b21b6; --role-sa-border: #c4b5fd;
-      --role-va-bg: #dbeafe; --role-va-text: #1e40af; --role-va-border: #93c5fd;
-      --role-st-bg: #d1fae5; --role-st-text: #065f46; --role-st-border: #6ee7b7;
+      --role-sa-bg: #e0d4fc; --role-sa-text: #4c1d95; --role-sa-border: #a78bfa;
+      --role-va-bg: #c8dffc; --role-va-text: #1e3a6e; --role-va-border: #6fa8f5;
+      --role-st-bg: #b8ecd0; --role-st-text: #064e3b; --role-st-border: #34d399;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -585,33 +585,33 @@ function getMermaidConfig(theme) {
       attributeBackgroundColorOdd: '#171717',
     } : {
       darkMode: false,
-      background: '#f1f1f1',
-      primaryColor: '#ffffff',
-      primaryTextColor: '#171717',
-      primaryBorderColor: '#3ecf8e',
-      secondaryColor: '#f1f1f1',
-      secondaryTextColor: '#171717',
-      secondaryBorderColor: '#e5e5e5',
-      tertiaryColor: '#f8f8f8',
-      tertiaryTextColor: '#171717',
-      tertiaryBorderColor: '#e5e5e5',
-      lineColor: '#3ecf8e',
+      background: '#e0e0e0',
+      primaryColor: '#f5f5f5',
+      primaryTextColor: '#1a1a1a',
+      primaryBorderColor: '#30a46c',
+      secondaryColor: '#e0e0e0',
+      secondaryTextColor: '#1a1a1a',
+      secondaryBorderColor: '#b0b0b0',
+      tertiaryColor: '#eaeaea',
+      tertiaryTextColor: '#1a1a1a',
+      tertiaryBorderColor: '#b0b0b0',
+      lineColor: '#30a46c',
       fontFamily: 'Inter, sans-serif',
       fontSize: '16px',
-      nodeBorder: '#e5e5e5',
-      mainBkg: '#ffffff',
-      clusterBkg: '#f1f1f1',
-      clusterBorder: '#e5e5e5',
-      edgeLabelBackground: '#ffffff',
-      noteTextColor: '#171717',
-      noteBkgColor: '#ffffff',
-      noteBorderColor: '#3ecf8e',
-      labelBoxBkgColor: '#ffffff',
-      labelBoxBorderColor: '#e5e5e5',
-      labelTextColor: '#171717',
-      relationColor: '#3ecf8e',
-      attributeBackgroundColorEven: '#ffffff',
-      attributeBackgroundColorOdd: '#f1f1f1',
+      nodeBorder: '#b0b0b0',
+      mainBkg: '#f5f5f5',
+      clusterBkg: '#e0e0e0',
+      clusterBorder: '#b0b0b0',
+      edgeLabelBackground: '#eaeaea',
+      noteTextColor: '#1a1a1a',
+      noteBkgColor: '#f5f5f5',
+      noteBorderColor: '#30a46c',
+      labelBoxBkgColor: '#f5f5f5',
+      labelBoxBorderColor: '#b0b0b0',
+      labelTextColor: '#1a1a1a',
+      relationColor: '#30a46c',
+      attributeBackgroundColorEven: '#f5f5f5',
+      attributeBackgroundColorOdd: '#e8e8e8',
     },
     flowchart: { htmlLabels: true, curve: 'basis', padding: 20, nodeSpacing: 60, rankSpacing: 80 },
     er: { layoutDirection: 'TB', minEntityWidth: 120, entityPadding: 20, fontSize: 16 },
@@ -1213,13 +1213,13 @@ const rolePalettes = {
     neutral: 'fill:#1f1f1f,color:#a0a0a0,stroke:#3e3e3e',
   },
   light: {
-    sa:      'fill:#ede9fe,color:#5b21b6,stroke:#7c3aed',
-    va:      'fill:#dbeafe,color:#1e40af,stroke:#3b82f6',
-    st:      'fill:#d1fae5,color:#065f46,stroke:#3ecf8e',
-    success: 'fill:#d1fae5,color:#065f46,stroke:#3ecf8e',
-    error:   'fill:#ffe4e6,color:#9f1239,stroke:#f43f5e',
-    warning: 'fill:#fef3c7,color:#92400e,stroke:#f59e0b',
-    neutral: 'fill:#f1f1f1,color:#525252,stroke:#e5e5e5',
+    sa:      'fill:#e0d4fc,color:#4c1d95,stroke:#a78bfa',
+    va:      'fill:#c8dffc,color:#1e3a6e,stroke:#6fa8f5',
+    st:      'fill:#b8ecd0,color:#064e3b,stroke:#34d399',
+    success: 'fill:#b8ecd0,color:#064e3b,stroke:#34d399',
+    error:   'fill:#fecdd3,color:#881337,stroke:#f43f5e',
+    warning: 'fill:#fde68a,color:#78350f,stroke:#f59e0b',
+    neutral: 'fill:#e0e0e0,color:#444444,stroke:#b0b0b0',
   },
 };
 
