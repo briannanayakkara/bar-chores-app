@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
