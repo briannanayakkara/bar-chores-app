@@ -307,9 +307,9 @@ export default function AdminDashboard() {
 
           {/* Performance Rankings */}
           <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <h2 className="text-lg font-semibold text-white">Top Performers</h2>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap">
                 {(['today', 'week', 'month', 'all'] as const).map(r => (
                   <button key={r} onClick={() => setPerfRange(r)}
                     className={`px-3 py-1 rounded-lg text-xs capitalize ${perfRange === r ? 'bg-primary text-slate-900' : 'bg-slate-700 text-slate-400 hover:text-white'}`}>
@@ -349,7 +349,7 @@ export default function AdminDashboard() {
 
           {/* Weekly Calendar */}
           <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
               <h2 className="text-lg font-semibold text-white">Weekly Calendar</h2>
               <div className="flex items-center gap-2">
                 <button onClick={prevWeek} className="px-2 py-1 text-slate-400 hover:text-white bg-slate-700 rounded min-h-[32px]">←</button>
@@ -365,14 +365,15 @@ export default function AdminDashboard() {
             </div>
 
             {/* Legend */}
-            <div className="flex gap-3 mb-3 text-xs">
+            <div className="flex gap-3 mb-3 text-xs flex-wrap">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-500"></span> Pending</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400"></span> Submitted</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400"></span> Approved</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400"></span> Rejected</span>
             </div>
 
-            <div className="grid grid-cols-7 gap-2">
+            <div className="overflow-x-auto -mx-5 px-5 pb-2 scrollbar-thin">
+            <div className="grid grid-cols-7 gap-2" style={{ minWidth: '540px' }}>
               {getWeekDays().map(day => {
                 const dateStr = getLocalDate(day);
                 const dayEntries = calendarData[dateStr] || [];
@@ -425,6 +426,7 @@ export default function AdminDashboard() {
                   </button>
                 );
               })}
+            </div>
             </div>
 
             {/* Selected Day Detail */}
