@@ -5,9 +5,12 @@ import { readFileSync } from 'fs'
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode: _mode }) => ({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-})
+  envDir: '.',
+  // Vite auto-loads .env.[mode] files — running `vite` loads .env.development,
+  // running `vite build` loads .env.production
+}))
