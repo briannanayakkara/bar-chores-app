@@ -350,6 +350,26 @@ bar-chores-app/
 
 ---
 
+## Environments
+
+The app runs in two separate environments — **Production** and **Development** — each with its own Supabase project, Vercel deployment, and data.
+
+| | Production | Development |
+|---|---|---|
+| **Branch** | `main` | `develop` |
+| **Supabase** | `sepcdjmwdfjjieaxqoqn` (real data) | `drwflvxdvwtjzuqxfort` (dummy data) |
+| **Vercel URL** | `bar-chores-app.vercel.app` | Preview URL (auto-generated) |
+| **App title** | Bar Chores | Bar Chores [DEV] |
+| **DEV badge** | Hidden | Visible orange badge |
+
+- Environment is controlled by `VITE_ENV` and `.env.production` / `.env.development` files
+- Vite auto-loads the correct `.env` file based on build mode
+- `.env.example` is committed as a safe template — actual env files are gitignored
+
+See **[Documentation/ENVIRONMENTS.md](ENVIRONMENTS.md)** for full credentials, Vercel setup, CI/CD pipelines, and the DEV database setup checklist.
+
+---
+
 ## 🔑 Environment Variables
 
 ```env
