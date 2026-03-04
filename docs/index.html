@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bar Chores App — Application Flowchart</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    /* ─── THEME TOKENS ─── */
+    [data-theme="dark"] {
+      --bg: #121212;
+      --bg-surface: #1f1f1f;
+      --bg-preview: #171717;
+      --border: #2e2e2e;
+      --border-hover: #3e3e3e;
+      --text: #fafafa;
+      --text-secondary: #a0a0a0;
+      --text-tertiary: #707070;
+      --accent: #3ecf8e;
+      --accent-tint: #002918;
+      --accent-glow: rgba(62, 207, 142, 0.15);
+      --modal-overlay: rgba(0, 0, 0, 0.92);
+      --scrollbar-track: #121212;
+      --scrollbar-thumb: #2e2e2e;
+      /* Role colors */
+      --role-sa-bg: #2d1b69; --role-sa-text: #d4bbff; --role-sa-border: #7c3aed;
+      --role-va-bg: #1a365d; --role-va-text: #90cdf4; --role-va-border: #3b82f6;
+      --role-st-bg: #002918; --role-st-text: #6ee7b7; --role-st-border: #3ecf8e;
+    }
+    [data-theme="light"] {
+      --bg: #f8f8f8;
+      --bg-surface: #ffffff;
+      --bg-preview: #f1f1f1;
+      --border: #e5e5e5;
+      --border-hover: #d4d4d4;
+      --text: #171717;
+      --text-secondary: #525252;
+      --text-tertiary: #a0a0a0;
+      --accent: #3ecf8e;
+      --accent-tint: #ecfdf5;
+      --accent-glow: rgba(62, 207, 142, 0.12);
+      --modal-overlay: rgba(255, 255, 255, 0.92);
+      --scrollbar-track: #f8f8f8;
+      --scrollbar-thumb: #d4d4d4;
+      /* Role colors */
+      --role-sa-bg: #ede9fe; --role-sa-text: #5b21b6; --role-sa-border: #c4b5fd;
+      --role-va-bg: #dbeafe; --role-va-text: #1e40af; --role-va-border: #93c5fd;
+      --role-st-bg: #d1fae5; --role-st-text: #065f46; --role-st-border: #6ee7b7;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+    /* ─── HEADER ─── */
+    .page-header {
+      text-align: center;
+      padding: 48px 24px 16px;
+      position: relative;
+    }
+    .page-header h1 {
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .page-header p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-top: 8px;
+    }
+    .page-header .badges {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      padding: 5px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .badge-sa { background: var(--role-sa-bg); color: var(--role-sa-text); border-color: var(--role-sa-border); }
+    .badge-va { background: var(--role-va-bg); color: var(--role-va-text); border-color: var(--role-va-border); }
+    .badge-st { background: var(--role-st-bg); color: var(--role-st-text); border-color: var(--role-st-border); }
+
+    /* ─── THEME TOGGLE ─── */
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .theme-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .click-hint {
+      text-align: center;
+      padding: 0 24px 32px;
+      color: var(--text-tertiary);
+      font-size: 13px;
+    }
+
+    /* ─── CARD GRID ─── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+      padding: 0 24px 48px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      overflow: hidden;
+      position: relative;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px var(--accent-glow);
+    }
+    .card:hover .card-preview { opacity: 1; }
+    .card:hover .card-expand { opacity: 1; }
+
+    .card-top {
+      position: relative;
+      height: 200px;
+      background: var(--bg-preview);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-preview {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+      transition: opacity 0.25s;
+      padding: 12px;
+    }
+    .card-preview svg { max-width: 100%; max-height: 100%; }
+
+    .card-expand {
+      position: absolute;
+      inset: 0;
+      background: var(--accent-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .card-expand span {
+      background: var(--accent);
+      color: #000;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+    .card-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--accent-tint);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .card-body h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .card-body p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ─── FULLSCREEN MODAL ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--modal-overlay);
+      backdrop-filter: blur(8px);
+    }
+    .modal-overlay.active { display: flex; flex-direction: column; }
+
+    /* Top bar */
+    .modal-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .modal-title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .modal-title-area .modal-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--accent-tint);
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .modal-title-area h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modal-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .ctrl-btn {
+      background: var(--bg-preview);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover { background: var(--border); color: var(--text); }
+    .ctrl-btn.close-btn:hover { background: #4c0519; color: #fb7185; }
+
+    .zoom-label {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 44px;
+      text-align: center;
+    }
+    .ctrl-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    /* Diagram viewport */
+    .modal-viewport {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+    }
+    .modal-viewport.dragging { cursor: grabbing; }
+
+    .modal-diagram {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+    }
+    .modal-diagram svg {
+      display: block;
+    }
+
+    /* Info panel (bottom) */
+    .modal-info {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+    .modal-info .desc {
+      flex: 1;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .modal-info .nav-arrows {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .nav-arrow {
+      background: var(--bg-preview);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-arrow:hover { background: var(--border); color: var(--text); }
+    .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+    .nav-arrow:disabled:hover { background: var(--bg-preview); color: var(--text-secondary); }
+
+    /* ─── TOOLTIP ─── */
+    .node-tooltip {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      background: var(--bg-surface);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 12px 16px;
+      max-width: 320px;
+      pointer-events: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    .node-tooltip.visible { display: block; }
+    .node-tooltip .tt-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .node-tooltip .tt-body {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ─── KEYBOARD HINTS ─── */
+    .kb-hints {
+      text-align: center;
+      padding: 0 24px 40px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .kb-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-tertiary);
+      font-size: 12px;
+    }
+    .kb-key {
+      background: var(--bg-preview);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .card-grid { grid-template-columns: 1fr; padding: 0 16px 32px; }
+      .page-header { padding: 32px 16px 12px; }
+      .page-header h1 { font-size: 28px; }
+      .theme-toggle { top: 12px; right: 12px; width: 36px; height: 36px; }
+      .theme-toggle svg { width: 18px; height: 18px; }
+      .modal-topbar { padding: 10px 12px; }
+      .modal-title-area h2 { font-size: 14px; }
+      .modal-info { flex-direction: column; padding: 12px; }
+      .modal-info .nav-arrows { width: 100%; justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Tooltip element -->
+<div class="node-tooltip" id="tooltip">
+  <div class="tt-title" id="tt-title"></div>
+  <div class="tt-body" id="tt-body"></div>
+</div>
+
+<!-- Page header -->
+<header class="page-header">
+  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">
+    <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+  </button>
+  <h1>Bar Chores App</h1>
+  <p>Gamified bar staff task management — Application Flowchart v1.8.2</p>
+  <div class="badges">
+    <span class="badge badge-sa">Super Admin</span>
+    <span class="badge badge-va">Venue Admin</span>
+    <span class="badge badge-st">Staff</span>
+  </div>
+</header>
+
+<p class="click-hint">Click any diagram to open it full-screen. Hover over nodes for details.</p>
+
+<!-- Card grid -->
+<div class="card-grid" id="cardGrid"></div>
+
+<!-- Keyboard hints -->
+<div class="kb-hints">
+  <div class="kb-hint"><span class="kb-key">Click</span> Open diagram</div>
+  <div class="kb-hint"><span class="kb-key">Esc</span> Close</div>
+  <div class="kb-hint"><span class="kb-key">&larr; &rarr;</span> Navigate</div>
+  <div class="kb-hint"><span class="kb-key">+ &minus;</span> Zoom</div>
+  <div class="kb-hint"><span class="kb-key">Drag</span> Pan</div>
+  <div class="kb-hint"><span class="kb-key">Scroll</span> Zoom</div>
+</div>
+
+<footer>Bar Chores App v1.8.2 &mdash; March 2026</footer>
+
+<!-- Fullscreen modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-topbar">
+    <div class="modal-title-area">
+      <span class="modal-num" id="modalNum">1</span>
+      <h2 id="modalTitle">Diagram</h2>
+    </div>
+    <div class="modal-controls">
+      <button class="ctrl-btn" onclick="zoomIn()" title="Zoom in (+)">+</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="ctrl-btn" onclick="zoomOut()" title="Zoom out (-)">&#8722;</button>
+      <button class="ctrl-btn" onclick="resetZoom()" title="Fit to screen">&#8634;</button>
+      <div class="ctrl-divider"></div>
+      <button class="ctrl-btn close-btn" onclick="closeModal()" title="Close (Esc)">&times;</button>
+    </div>
+  </div>
+
+  <div class="modal-viewport" id="viewport">
+    <div class="modal-diagram" id="modalDiagram"></div>
+  </div>
+
+  <div class="modal-info">
+    <div class="desc" id="modalDesc"></div>
+    <div class="nav-arrows">
+      <button class="nav-arrow" id="prevBtn" onclick="navigate(-1)">&larr; Previous</button>
+      <button class="nav-arrow" id="nextBtn" onclick="navigate(1)">Next &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// THEME ICONS (SVG paths)
+// ═══════════════════════════════════════════════════════
+const SUN_SVG = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+const MOON_SVG = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+
+// ═══════════════════════════════════════════════════════
+// THEME INIT
+// ═══════════════════════════════════════════════════════
+function getCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'dark';
+}
+
+function updateToggleIcon() {
+  const theme = getCurrentTheme();
+  document.getElementById('themeIcon').innerHTML = theme === 'dark' ? SUN_SVG : MOON_SVG;
+}
+
+// Load saved theme
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  // Icon updated after DOM ready
+})();
+
+// ═══════════════════════════════════════════════════════
+// MERMAID THEME CONFIG
+// ═══════════════════════════════════════════════════════
+function getMermaidConfig(theme) {
+  const isDark = theme === 'dark';
+  return {
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: isDark ? {
+      darkMode: true,
+      background: '#171717',
+      primaryColor: '#1f1f1f',
+      primaryTextColor: '#fafafa',
+      primaryBorderColor: '#3ecf8e',
+      secondaryColor: '#2e2e2e',
+      secondaryTextColor: '#fafafa',
+      secondaryBorderColor: '#3e3e3e',
+      tertiaryColor: '#1f1f1f',
+      tertiaryTextColor: '#fafafa',
+      tertiaryBorderColor: '#3e3e3e',
+      lineColor: '#3ecf8e',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '16px',
+      nodeBorder: '#3e3e3e',
+      mainBkg: '#1f1f1f',
+      clusterBkg: '#171717',
+      clusterBorder: '#2e2e2e',
+      edgeLabelBackground: '#1f1f1f',
+      noteTextColor: '#fafafa',
+      noteBkgColor: '#1f1f1f',
+      noteBorderColor: '#3ecf8e',
+      labelBoxBkgColor: '#1f1f1f',
+      labelBoxBorderColor: '#2e2e2e',
+      labelTextColor: '#fafafa',
+      relationColor: '#3ecf8e',
+      attributeBackgroundColorEven: '#1f1f1f',
+      attributeBackgroundColorOdd: '#171717',
+    } : {
+      darkMode: false,
+      background: '#f1f1f1',
+      primaryColor: '#ffffff',
+      primaryTextColor: '#171717',
+      primaryBorderColor: '#3ecf8e',
+      secondaryColor: '#f1f1f1',
+      secondaryTextColor: '#171717',
+      secondaryBorderColor: '#e5e5e5',
+      tertiaryColor: '#f8f8f8',
+      tertiaryTextColor: '#171717',
+      tertiaryBorderColor: '#e5e5e5',
+      lineColor: '#3ecf8e',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '16px',
+      nodeBorder: '#e5e5e5',
+      mainBkg: '#ffffff',
+      clusterBkg: '#f1f1f1',
+      clusterBorder: '#e5e5e5',
+      edgeLabelBackground: '#ffffff',
+      noteTextColor: '#171717',
+      noteBkgColor: '#ffffff',
+      noteBorderColor: '#3ecf8e',
+      labelBoxBkgColor: '#ffffff',
+      labelBoxBorderColor: '#e5e5e5',
+      labelTextColor: '#171717',
+      relationColor: '#3ecf8e',
+      attributeBackgroundColorEven: '#ffffff',
+      attributeBackgroundColorOdd: '#f1f1f1',
+    },
+    flowchart: { htmlLabels: true, curve: 'basis', padding: 20, nodeSpacing: 60, rankSpacing: 80 },
+    er: { layoutDirection: 'TB', minEntityWidth: 120, entityPadding: 20, fontSize: 16 },
+    stateDiagram: { labelFontSize: 16 },
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// DIAGRAM DEFINITIONS
+// ═══════════════════════════════════════════════════════
+const diagrams = [
+  {
+    id: 'overview',
+    title: 'High-Level Overview',
+    desc: 'Three separate user roles — Super Admin, Venue Admin, and Staff — each with their own login path, layout, and feature set. The app is fully multi-tenant: each venue is isolated via Row Level Security.',
+    code: `flowchart TB
+    LOGIN{"Login Screen"}
+    LOGIN -->|"Email + Password<br/>/superadmin/login"| SA["Super Admin"]
+    LOGIN -->|"Email + Password<br/>/login"| VA["Venue Admin"]
+    LOGIN -->|"Venue > Profile > PIN<br/>/staff-login"| ST["Staff"]
+
+    subgraph SUPER["Super Admin Panel"]
+        SA --> SA1["Create / Delete<br/>Venues"]
+        SA --> SA2["Assign / Remove<br/>Venue Admins"]
+    end
+
+    subgraph ADMIN["Venue Admin Panel"]
+        VA --> VA1["Dashboard<br/>& Analytics"]
+        VA --> VA2["Staff<br/>Management"]
+        VA --> VA3["Task<br/>Management"]
+        VA --> VA4["Assignment<br/>& Photo Review"]
+        VA --> VA5["Reward<br/>Approval"]
+        VA --> VA6["Venue<br/>Theme"]
+    end
+
+    subgraph STAFF["Staff Panel"]
+        ST --> ST1["Dashboard<br/>& Activity Feed"]
+        ST --> ST2["Claim &<br/>Complete Tasks"]
+        ST --> ST3["Leaderboard"]
+        ST --> ST4["Redeem<br/>Rewards"]
+        ST --> ST5["Profile &<br/>Avatar Builder"]
+    end`,
+    tooltips: {
+      'LOGIN': { title: 'Login Screen', body: 'Three separate login pages — one for each role. No shared login UI.' },
+      'SA': { title: 'Super Admin', body: 'Platform owner. Manages all venues and assigns venue admins. Uses email + password auth via Supabase.' },
+      'VA': { title: 'Venue Admin', body: 'Bar manager. Manages staff, tasks, assignments, rewards, and venue theme. Scoped to one venue via RLS.' },
+      'ST': { title: 'Staff', body: 'Bar staff member. Uses PIN-based login (no email needed). Completes tasks, earns points, redeems rewards.' },
+      'SA1': { title: 'Venue Management', body: 'Create new venues (name + address, auto-generates URL slug). Delete venues cascades all related data.' },
+      'SA2': { title: 'Admin Assignment', body: 'Assign a venue_admin profile to a venue. Creates a new profile row with role=venue_admin.' },
+      'VA1': { title: 'Dashboard & Analytics', body: 'Stats cards (active staff, pending, tasks today, points), pending reviews, top performers leaderboard, weekly calendar.' },
+      'VA2': { title: 'Staff Management', body: 'Create staff accounts (username + PIN via Edge Function), edit, reset PINs, delete staff.' },
+      'VA3': { title: 'Task Management', body: 'Create tasks with title, description, points, photo requirement, recurring flag. Review staff-proposed tasks.' },
+      'VA4': { title: 'Assignments & Photo Review', body: 'Assign tasks to staff or leave open. Review photo submissions — approve to award points, reject to send back.' },
+      'VA5': { title: 'Reward Approval', body: 'Review drink/bottle ticket requests. Approve generates a redemption code and deducts points.' },
+      'VA6': { title: 'Venue Theme', body: 'Customize primary/accent/background colors, upload logo, set custom app name. Staff see the theme on login.' },
+      'ST1': { title: 'Staff Dashboard', body: 'Shows current points total, today\'s assigned tasks, and a real-time activity feed (Supabase Realtime).' },
+      'ST2': { title: 'Tasks', body: 'Three sections: My Assigned, Open (claimable), Available (self-assign). Complete tasks for points. Propose new tasks.' },
+      'ST3': { title: 'Leaderboard', body: 'All venue staff ranked by points_total. Real-time updates via Supabase Realtime subscription.' },
+      'ST4': { title: 'Rewards', body: 'Redeem points for drink tickets (100 pts) or bottle tickets (1000 pts). View redemption history and codes.' },
+      'ST5': { title: 'Profile & Avatar', body: 'Build a custom avatar (skin tone, hair, accessories) or upload a photo. Change PIN. First-login forces setup.' },
+    },
+  },
+  {
+    id: 'auth',
+    title: 'Admin Authentication Flow',
+    desc: 'Venue Admins and Super Admins use email + password via Supabase Auth. After successful auth, the profile is fetched via REST API (bypasses Supabase client issues on corporate firewalls), then role-based routing kicks in.',
+    code: `flowchart LR
+    A["Visit /login<br/>or /superadmin/login"] --> B["Enter Email<br/>+ Password"]
+    B --> C["Supabase Auth<br/>signInWithPassword"]
+    C --> D{"Auth<br/>Success?"}
+    D -.->|"No"| E["Show Error"]
+    E -.-> B
+    D ==>|"Yes"| F["Fetch Profile<br/>via REST API"]
+    F --> G["Auth state<br/>change fires"]
+    G --> H{"Check<br/>Role"}
+    H -->|"super_admin"| I["Super Admin<br/>Dashboard"]
+    H -->|"venue_admin"| J["/admin/dashboard"]
+    H -.->|"wrong role"| K["Redirect to<br/>correct login"]`,
+    tooltips: {
+      'A': { title: 'Login Page', body: 'Two separate pages: /login for venue admins, /superadmin/login for super admins.' },
+      'B': { title: 'Credentials', body: 'Standard email + password form. Admin accounts are created by the super admin.' },
+      'C': { title: 'Supabase Auth', body: 'Calls supabase.auth.signInWithPassword(). Creates a session with JWT token.' },
+      'D': { title: 'Auth Check', body: 'Supabase returns error if invalid credentials, or a session object on success.' },
+      'E': { title: 'Error Display', body: 'Shows "Invalid login credentials" message. User can retry.' },
+      'F': { title: 'Profile Fetch', body: 'Uses direct fetch() to REST API instead of supabase client — works around corporate firewall issues with Supabase realtime.' },
+      'G': { title: 'Auth State Change', body: 'Supabase onAuthStateChange listener fires, triggering profile load into AuthContext.' },
+      'H': { title: 'Role Check', body: 'RequireAuth component checks profile.role against allowedRoles for the route.' },
+      'I': { title: 'Super Admin Dashboard', body: 'Single page at /superadmin — manage all venues and assign admins.' },
+      'J': { title: 'Admin Dashboard', body: 'Venue admin landing page — stats, pending reviews, top performers, weekly calendar.' },
+      'K': { title: 'Wrong Role Redirect', body: 'If a staff member tries /login, they get redirected to /staff-login, and vice versa.' },
+    },
+  },
+  {
+    id: 'staff-login',
+    title: 'Staff PIN-Based Login',
+    desc: 'Staff don\'t have email accounts. They log in by selecting their venue, tapping their profile card, and entering a PIN. A Supabase Edge Function validates the PIN hash and issues a custom JWT with venue_id and role claims.',
+    code: `flowchart TD
+    A["Staff visits<br/>/staff-login"] --> B["Select Venue<br/>from card grid"]
+    B --> C["Venue theme<br/>colors applied"]
+    C --> D["Select Profile<br/>from avatar grid"]
+    D --> E["Enter PIN"]
+    E --> F["POST to Edge Function<br/>staff-auth"]
+    F --> G{"PIN hash<br/>matches?"}
+    G -.->|"No"| H["Error:<br/>Invalid PIN"]
+    H -.-> E
+    G ==>|"Yes"| I["Edge Function<br/>issues JWT"]
+    I --> J["JWT with<br/>venue + role claims"]
+    J --> K["Verify OTP<br/>establish session"]
+    K --> L["Profile loaded<br/>into AuthContext"]
+    L --> M{"First<br/>login?"}
+    M -.->|"Yes"| N["Redirect to<br/>/staff/profile"]
+    M ==>|"No"| O["Redirect to<br/>/staff/dashboard"]
+    N --> P["Choose Avatar"]
+    P --> Q["Change PIN"]
+    Q --> R["Auto-logout"]
+    R --> A`,
+    tooltips: {
+      'A': { title: '/staff-login', body: 'Mobile-optimized login page. No email or keyboard typing needed until PIN step.' },
+      'B': { title: 'Venue Selection', body: 'Grid of venue cards loaded from the venues table. Staff taps their bar.' },
+      'C': { title: 'Theme Applied', body: 'Venue\'s custom colors (primary, accent, background) are applied via CSS custom properties.' },
+      'D': { title: 'Profile Selection', body: 'Grid of staff profile cards showing avatar + display name. Staff taps their own card.' },
+      'E': { title: 'PIN Entry', body: 'Numeric input field. PIN is typically 4+ digits, set by admin on account creation.' },
+      'F': { title: 'Edge Function Call', body: 'POST to supabase/functions/staff-auth with profile_id and PIN. Runs server-side.' },
+      'G': { title: 'PIN Validation', body: 'Edge Function uses bcrypt.compare() to verify PIN against pin_hash stored in profiles table.' },
+      'H': { title: 'Invalid PIN', body: 'Error message shown. User can retry. No lockout mechanism currently.' },
+      'I': { title: 'Custom JWT Issued', body: 'Edge Function creates a Supabase-compatible JWT with custom claims for venue_id and user_role.' },
+      'J': { title: 'JWT Claims', body: 'sub=profile.id, role=authenticated (for RLS), plus custom: venue_id, user_role=staff.' },
+      'K': { title: 'OTP Verification', body: 'Client calls supabase.auth.verifyOtp() with the token_hash from the Edge Function. Establishes a session.' },
+      'L': { title: 'Profile Loaded', body: 'AuthContext populated with session, user, and full profile data including points_total.' },
+      'M': { title: 'First Login Check', body: 'If avatar_type is NULL, this is the staff member\'s first login — force profile setup.' },
+      'N': { title: 'Forced Profile Setup', body: 'Staff must choose an avatar and change their PIN from the admin-generated default.' },
+      'O': { title: 'Staff Dashboard', body: 'Normal login destination — shows points, today\'s tasks, and activity feed.' },
+      'P': { title: 'Avatar Setup', body: 'Choose between avatar builder (skin tone, hair, accessories) or upload a photo.' },
+      'Q': { title: 'PIN Change', body: 'Must enter current PIN and set a new one. Prevents staff from keeping the default PIN.' },
+      'R': { title: 'Auto-Logout', body: 'After PIN change on first login, session is destroyed. Staff signs back in with their new PIN.' },
+    },
+  },
+  {
+    id: 'staff-workflow',
+    title: 'Staff Workflow',
+    desc: 'A staff member\'s day: check dashboard for tasks, claim or self-assign tasks, complete them (photo upload if required), earn points instantly or after admin approval, check leaderboard ranking, and redeem points for drink/bottle tickets.',
+    code: `flowchart TD
+    DASH["Staff Dashboard<br/>Points + Tasks + Feed"] --> TASKS["/staff/tasks"]
+    TASKS --> T1["My Assigned Tasks<br/>Admin assigned to me"]
+    TASKS --> T2["Open Tasks<br/>Unassigned — Claimable"]
+    TASKS --> T3["Available Tasks<br/>Self-assign from gallery"]
+    TASKS --> T4["Propose New Task<br/>Title + Description"]
+    T1 --> COMPLETE{"Complete<br/>Task"}
+    T2 -->|"Claim"| COMPLETE
+    T3 -->|"Take"| COMPLETE
+    T4 --> PROPOSED["Status: Proposed<br/>Awaits admin review"]
+    COMPLETE ==>|"No photo<br/>required"| AUTO["AUTO-APPROVED<br/>Points instantly"]
+    COMPLETE -->|"Photo<br/>required"| PHOTO["Upload Photo<br/>Status: Submitted"]
+    AUTO --> CELEBRATE["Confetti!<br/>+ Points Popup"]
+    PHOTO --> WAIT["Awaits Admin<br/>Photo Review"]
+    WAIT ==>|"Approved"| CELEBRATE
+    WAIT -.->|"Rejected"| RETRY["Task back<br/>to Pending"]
+    CELEBRATE --> POINTS["Points added<br/>to total"]
+    POINTS --> LB["/staff/leaderboard<br/>Rank vs teammates"]
+    POINTS --> REWARDS["/staff/rewards"]
+    REWARDS --> CHECK{"Enough<br/>points?"}
+    CHECK -->|"100+ pts"| DRINK["Request<br/>Drink Ticket"]
+    CHECK -->|"1000+ pts"| BOTTLE["Request<br/>Bottle Ticket"]
+    CHECK -.->|"Not enough"| EARN["Keep completing<br/>tasks!"]
+    DRINK --> APPROVE["Admin approves"]
+    BOTTLE --> APPROVE
+    APPROVE --> CODE["Redemption Code<br/>e.g. DRK-ABC2"]`,
+    tooltips: {
+      'DASH': { title: 'Staff Dashboard', body: 'Shows current points total in a large card, today\'s tasks list, and a real-time activity feed showing who earned what.' },
+      'TASKS': { title: '/staff/tasks', body: 'Main task page with three sections plus a proposal form. Sorted by points (highest first).' },
+      'T1': { title: 'My Assigned Tasks', body: 'Tasks specifically assigned to this staff member by an admin. Must complete these.' },
+      'T2': { title: 'Open Tasks', body: 'Tasks created by admin but assigned to nobody. Any staff can claim them. First-come-first-served.' },
+      'T3': { title: 'Available Tasks', body: 'All active tasks not yet assigned to this user today. Staff can self-assign from this gallery.' },
+      'T4': { title: 'Propose New Task', body: 'Staff can suggest new tasks with title + description. Admin reviews and sets point value before activating.' },
+      'COMPLETE': { title: 'Task Completion', body: 'Two paths based on requires_photo flag. Tasks worth 500+ points auto-require photo.' },
+      'PROPOSED': { title: 'Proposed Status', body: 'Task created with approval_status=proposed. Visible to admin in the proposals section.' },
+      'AUTO': { title: 'Auto-Approved', body: 'No photo needed = instant approval. Points ledger entry created immediately. No admin action required.' },
+      'PHOTO': { title: 'Photo Upload', body: 'Staff takes/uploads photo. Stored in task-photos bucket as {venue_id}/{assignment_id}.ext. Status becomes "submitted".' },
+      'CELEBRATE': { title: 'Celebration', body: 'Canvas confetti animation fires! Intensity scales with points: 100pts = 1x, 300+ = 3x with side bursts. Lasts 4 seconds.' },
+      'WAIT': { title: 'Awaiting Review', body: 'Admin sees this in their pending reviews. They view the photo via signed URL and approve or reject.' },
+      'RETRY': { title: 'Rejected', body: 'Task goes back to pending status. Staff can redo and resubmit.' },
+      'POINTS': { title: 'Points Awarded', body: 'Positive delta inserted into points_ledger. DB trigger recalculates profile.points_total.' },
+      'LB': { title: 'Leaderboard', body: 'Live-updating ranking of all venue staff by points_total. Real-time via Supabase subscription.' },
+      'REWARDS': { title: '/staff/rewards', body: 'Shows current balance and available rewards. History of past redemptions with codes.' },
+      'CHECK': { title: 'Balance Check', body: 'Buttons disabled if not enough points or if there\'s already a pending request.' },
+      'DRINK': { title: 'Drink Ticket', body: 'Costs 100 points. Creates reward_redemptions row with status=pending, reward_type=drink_ticket.' },
+      'BOTTLE': { title: 'Bottle Ticket', body: 'Costs 1000 points. Creates reward_redemptions row with status=pending, reward_type=bottle_ticket.' },
+      'EARN': { title: 'Not Enough Points', body: 'Button is disabled. Staff needs to complete more tasks to earn points.' },
+      'APPROVE': { title: 'Admin Approval', body: 'Admin reviews in /admin/rewards. On approve: points deducted, redemption code generated.' },
+      'CODE': { title: 'Redemption Code', body: 'Format like DRK-ABC2 or BTL-XYZ9. Staff shows code at bar. Admin marks as "used" when redeemed.' },
+    },
+  },
+  {
+    id: 'admin-workflow',
+    title: 'Venue Admin Workflow',
+    desc: 'Six sections: Dashboard (stats, reviews, performers, calendar), Staff Management (CRUD via Edge Functions), Task Management (create, toggle, review proposals), Assignments (assign, review photos), Rewards (approve, generate codes), Theme (colors, logo, app name).',
+    code: `flowchart TD
+    DASH["Admin Dashboard"] --> STATS["Stats Cards<br/>Staff / Tasks / Points"]
+    DASH --> PENDING["Pending Reviews<br/>Photo submissions"]
+    DASH --> TOP["Top Performers<br/>Today / Week / Month / All"]
+    DASH --> CAL["Weekly Calendar<br/>Status overview"]
+    DASH --> STAFF["/admin/users<br/>Staff Management"]
+    STAFF --> S_CREATE["Create Staff<br/>via Edge Function"]
+    STAFF --> S_EDIT["Edit Staff<br/>Name, Username"]
+    STAFF --> S_PIN["Reset PIN"]
+    STAFF --> S_DEL["Delete Staff"]
+    DASH --> TASK["/admin/tasks<br/>Task Management"]
+    TASK --> T_CREATE["Create Task<br/>Title, Points, Photo"]
+    TASK --> T_TOGGLE["Toggle<br/>Active / Inactive"]
+    TASK --> T_PROPOSE["Review Proposals<br/>from Staff"]
+    T_PROPOSE ==>|"Set points<br/>+ Approve"| T_ACTIVE["Task Active"]
+    T_PROPOSE -.->|"Reject"| T_REJECTED["Task Rejected"]
+    DASH --> ASSIGN["/admin/assignments"]
+    ASSIGN --> A_ASSIGN["Assign Task<br/>to Staff or Open"]
+    ASSIGN --> A_REVIEW["Review Photo<br/>Submissions"]
+    A_REVIEW ==>|"Approve"| A_POINTS["Points Awarded<br/>to Staff"]
+    A_REVIEW -.->|"Reject"| A_REJECT["Task back<br/>to Pending"]
+    DASH --> REWARD["/admin/rewards"]
+    REWARD --> R_REVIEW["Review Reward<br/>Requests"]
+    R_REVIEW ==>|"Approve"| R_CODE["Generate Code<br/>Deduct Points"]
+    R_REVIEW -.->|"Reject"| R_DENY["Request Denied"]
+    R_CODE --> R_USED["Mark as Used<br/>at bar"]
+    DASH --> THEME["/admin/theme"]
+    THEME --> TH_COLOR["Set Colors<br/>Primary, Accent, BG"]
+    THEME --> TH_LOGO["Upload Logo"]
+    THEME --> TH_NAME["Custom App Name"]`,
+    tooltips: {
+      'DASH': { title: 'Admin Dashboard', body: 'Landing page after login. Shows 4 stat cards, pending photo reviews, top performers leaderboard with time range toggle, and weekly calendar.' },
+      'STATS': { title: 'Stats Cards', body: 'Four cards: Active Staff count, Pending Approvals, Tasks completed Today, Points Awarded Today.' },
+      'PENDING': { title: 'Pending Reviews', body: 'List of task assignments with status=submitted. Shows "Has photo" indicator. Quick access to approve/reject.' },
+      'TOP': { title: 'Top Performers', body: 'Leaderboard with toggle: Today / This Week / This Month / All Time. Ranked by points earned in that period.' },
+      'CAL': { title: 'Weekly Calendar', body: 'Grid of 7 days showing task counts by status (pending, submitted, approved, rejected), total points, and status dots.' },
+      'STAFF': { title: 'Staff Management', body: '/admin/users — Table of all staff with Name, Username, Points Total, and action buttons.' },
+      'S_CREATE': { title: 'Create Staff', body: 'Calls Edge Function to create profile with bcrypt-hashed PIN. No Supabase auth.users entry needed for staff.' },
+      'S_EDIT': { title: 'Edit Staff', body: 'Update username and display_name fields on the profile.' },
+      'S_PIN': { title: 'Reset PIN', body: 'Modal prompt for new PIN. Hashed server-side via Edge Function.' },
+      'S_DEL': { title: 'Delete Staff', body: 'Confirmation dialog then deletes profile. Cascades to assignments, points, rewards.' },
+      'TASK': { title: 'Task Management', body: '/admin/tasks — Create, activate/deactivate tasks. Review staff proposals.' },
+      'T_CREATE': { title: 'Create Task', body: 'Form: title, description, points (number), requires_photo (auto-enabled if points >= 500), is_recurring.' },
+      'T_TOGGLE': { title: 'Toggle Active/Inactive', body: 'Sets is_active flag. Inactive tasks don\'t appear in staff\'s available task list.' },
+      'T_PROPOSE': { title: 'Staff Proposals', body: 'Tasks with approval_status=proposed. Admin must set point value before approving.' },
+      'T_ACTIVE': { title: 'Task Approved', body: 'approval_status set to active, is_active=true. Now visible to staff.' },
+      'T_REJECTED': { title: 'Task Rejected', body: 'approval_status set to rejected. Not visible to staff.' },
+      'ASSIGN': { title: 'Assignments', body: '/admin/assignments — Assign tasks to specific staff or leave open. Review submissions.' },
+      'A_ASSIGN': { title: 'Assign Task', body: 'Choose task and staff member, or leave assigned_to=NULL for anyone to claim.' },
+      'A_REVIEW': { title: 'Photo Review', body: 'View photo via signed URL (1-hour expiry from Supabase Storage). Approve or reject.' },
+      'A_POINTS': { title: 'Points Awarded', body: 'Positive delta inserted into points_ledger. DB trigger updates profile.points_total. Staff sees confetti.' },
+      'A_REJECT': { title: 'Rejected', body: 'Assignment status back to pending. Staff can redo and resubmit.' },
+      'REWARD': { title: 'Rewards', body: '/admin/rewards — Review pending reward requests from staff.' },
+      'R_REVIEW': { title: 'Review Requests', body: 'Shows staff name, reward type, points to deduct. Filter by status.' },
+      'R_CODE': { title: 'Generate Code', body: 'Redemption code generated (e.g. DRK-ABC2). Negative delta in points_ledger deducts points.' },
+      'R_DENY': { title: 'Request Denied', body: 'Status set to rejected. Points are NOT deducted. Staff keeps their balance.' },
+      'R_USED': { title: 'Mark as Used', body: 'When staff redeems the code at the bar, admin marks used_at timestamp.' },
+      'THEME': { title: 'Venue Theme', body: '/admin/theme — Full venue branding customization.' },
+      'TH_COLOR': { title: 'Color Settings', body: 'Hex color pickers for primary, accent, and background. Stored as RGB values in venue_settings.' },
+      'TH_LOGO': { title: 'Logo Upload', body: 'Stored in venue-assets bucket as {venue_id}/logo.ext. Shown in layouts and login screen.' },
+      'TH_NAME': { title: 'Custom App Name', body: 'Override "Bar Chores" with venue-specific name. Shown in header and login.' },
+    },
+  },
+  {
+    id: 'superadmin',
+    title: 'Super Admin Workflow',
+    desc: 'Platform-level management. Create and delete venues (cascade deletes all data). Assign and remove venue admins. Single-page dashboard — no nested layout or sub-routes.',
+    code: `flowchart LR
+    SA["Super Admin<br/>Dashboard"] --> V["Venue<br/>Management"]
+    SA --> A["Admin<br/>Management"]
+    V --> V1["Create Venue<br/>Name + Address"]
+    V --> V2["Delete Venue<br/>Cascades all data"]
+    V --> V3["View All Venues<br/>with admin list"]
+    A --> A1["Assign Admin<br/>to Venue"]
+    A --> A2["Remove Admin<br/>from Venue"]
+    V1 --> AUTO["Auto-creates<br/>venue_settings"]`,
+    tooltips: {
+      'SA': { title: 'Super Admin Dashboard', body: 'Single page at /superadmin. No sidebar or sub-routes. Header with logout button.' },
+      'V': { title: 'Venue Management', body: 'CRUD operations on venues table. All venues visible regardless of ownership.' },
+      'A': { title: 'Admin Management', body: 'Assign or remove venue_admin profiles. Creates profile with role=venue_admin.' },
+      'V1': { title: 'Create Venue', body: 'Enter name + address. Slug auto-generated from name (e.g. "The Anchor" → "the-anchor").' },
+      'V2': { title: 'Delete Venue', body: 'CASCADE deletes: all profiles (staff + admins), tasks, assignments, points_ledger, reward_redemptions, venue_settings.' },
+      'V3': { title: 'View All Venues', body: 'List showing venue name, address, and assigned admins. Quick overview of platform.' },
+      'A1': { title: 'Assign Admin', body: 'Creates a new profile with role=venue_admin, linked to the selected venue. Admin uses email/password to login.' },
+      'A2': { title: 'Remove Admin', body: 'Deletes the admin\'s profile row. They can no longer log in to manage that venue.' },
+      'AUTO': { title: 'Auto-Create Settings', body: 'Database trigger automatically creates a venue_settings row with default colors when a new venue is inserted.' },
+    },
+  },
+  {
+    id: 'task-lifecycle',
+    title: 'Task Lifecycle',
+    desc: 'Full state machine: tasks start as Proposed (by staff) or Active (by admin). Once active and assigned, they go through Pending → Submitted → Approved/Rejected. Approved tasks award points. Recurring tasks reset nightly via pg_cron.',
+    code: `stateDiagram-v2
+    direction LR
+    [*] --> Proposed : Staff proposes task
+    [*] --> Active : Admin creates task
+    Proposed --> Active : Admin approves and sets points
+    Proposed --> Rejected : Admin rejects
+    Active --> Inactive : Admin deactivates
+    Inactive --> Active : Admin reactivates
+    Active --> Pending : Assigned to staff or staff claims
+    Pending --> Submitted : Staff completes task
+    Submitted --> Approved : Admin approves or auto-approve
+    Submitted --> PendingAgain : Admin rejects
+    PendingAgain --> Submitted : Staff retries
+    Approved --> PointsAwarded : Points ledger positive delta
+    PointsAwarded --> [*]
+
+    note right of PointsAwarded
+        If is_recurring = true
+        pg_cron resets nightly
+    end note`,
+    tooltips: {
+      'Proposed': { title: 'Proposed', body: 'Staff suggested this task. Awaiting admin review. Admin must set point value before approving.' },
+      'Active': { title: 'Active', body: 'Task is live and can be assigned to staff or claimed. Visible in the task gallery.' },
+      'Rejected': { title: 'Rejected', body: 'Admin rejected the proposal. Not visible to staff. Cannot be resubmitted.' },
+      'Inactive': { title: 'Inactive', body: 'Admin deactivated the task. Not visible to staff. Can be reactivated later.' },
+      'Pending': { title: 'Pending', body: 'Task assigned to a staff member (or claimed). Waiting for them to complete it.' },
+      'Submitted': { title: 'Submitted', body: 'Staff completed the task. If photo required: awaiting admin review. If no photo: auto-approved.' },
+      'Approved': { title: 'Approved', body: 'Task completion verified. Points are being awarded to the staff member.' },
+      'PendingAgain': { title: 'Rejected (Retry)', body: 'Admin rejected the submission (e.g., bad photo). Staff can redo and resubmit.' },
+      'PointsAwarded': { title: 'Points Awarded', body: 'Positive delta in points_ledger. DB trigger updates profile.points_total. If recurring, pg_cron resets assignment overnight.' },
+    },
+  },
+  {
+    id: 'points',
+    title: 'Points & Rewards System',
+    desc: 'Points flow through the points_ledger table. Earning (task approval) adds positive deltas; spending (reward approval) adds negative deltas. A DB trigger recalculates profile.points_total on every INSERT. Supabase Realtime broadcasts changes to all connected clients.',
+    code: `flowchart TD
+    subgraph EARN["Earning Points"]
+        direction TB
+        TASK_DONE["Task Approved"] --> LEDGER_PLUS[("points_ledger<br/>+ positive delta")]
+        LEDGER_PLUS --> TRIGGER1["DB Trigger<br/>recalculates total"]
+        TRIGGER1 --> PROFILE_UP["points_total<br/>updated"]
+    end
+
+    subgraph SPEND["Spending Points"]
+        direction TB
+        REQUEST["Staff requests<br/>reward"] --> ADMIN_REV{"Admin<br/>Review"}
+        ADMIN_REV ==>|"Approve"| LEDGER_MINUS[("points_ledger<br/>- negative delta")]
+        ADMIN_REV -.->|"Reject"| DENIED["Request denied<br/>points kept"]
+        LEDGER_MINUS --> TRIGGER2["DB Trigger<br/>recalculates total"]
+        TRIGGER2 --> CODE["Redemption code<br/>generated"]
+    end
+
+    subgraph DISPLAY["Live Displays"]
+        direction TB
+        D1["Dashboard<br/>points card"]
+        D2["Leaderboard<br/>ranked by points"]
+        D3["Rewards page<br/>balance check"]
+    end
+
+    subgraph REALTIME["Supabase Realtime"]
+        direction TB
+        RT["points_ledger<br/>INSERT events"]
+        RT --> RT1["Staff activity<br/>feed"]
+        RT --> RT2["Leaderboard<br/>auto-refresh"]
+        RT --> RT3["Admin dashboard<br/>live stats"]
+    end
+
+    PROFILE_UP --> DISPLAY
+    LEDGER_PLUS --> REALTIME
+    LEDGER_MINUS --> REALTIME`,
+    tooltips: {
+      'TASK_DONE': { title: 'Task Approved', body: 'Either auto-approved (no photo) or manually approved by admin after photo review.' },
+      'LEDGER_PLUS': { title: 'Positive Ledger Entry', body: 'INSERT into points_ledger with positive delta value (e.g. +50). Links to assignment_id.' },
+      'TRIGGER1': { title: 'Points Trigger', body: 'PostgreSQL trigger fires on points_ledger INSERT. Recalculates SUM(delta) and updates profile.points_total.' },
+      'PROFILE_UP': { title: 'Profile Updated', body: 'profile.points_total now reflects the new balance. All queries that read this field see updated value.' },
+      'REQUEST': { title: 'Reward Request', body: 'Staff creates reward_redemptions row with status=pending. Drink ticket (100 pts) or bottle ticket (1000 pts).' },
+      'ADMIN_REV': { title: 'Admin Review', body: 'Admin sees pending requests in /admin/rewards. Approves or rejects.' },
+      'LEDGER_MINUS': { title: 'Negative Ledger Entry', body: 'INSERT into points_ledger with negative delta (e.g. -100). Deducts from staff balance.' },
+      'DENIED': { title: 'Request Denied', body: 'Status set to rejected. No points_ledger entry created. Balance unchanged.' },
+      'TRIGGER2': { title: 'Points Trigger', body: 'Same trigger fires — recalculates total. Balance goes down by the reward cost.' },
+      'CODE': { title: 'Redemption Code', body: 'Generated code like DRK-ABC2 or BTL-XYZ9. Staff shows at bar. Admin marks used.' },
+      'D1': { title: 'Dashboard Card', body: 'Large points number on staff dashboard. Updates on page load and realtime events.' },
+      'D2': { title: 'Leaderboard', body: 'All staff ranked by points_total DESC. Auto-refreshes via Realtime subscription.' },
+      'D3': { title: 'Rewards Balance', body: 'Shown on /staff/rewards. Determines which reward buttons are enabled.' },
+      'RT': { title: 'Realtime Events', body: 'Supabase Realtime listens for INSERT events on points_ledger table, filtered by venue_id.' },
+      'RT1': { title: 'Activity Feed', body: 'Staff dashboard shows who earned points, for what, and when. Live-updating.' },
+      'RT2': { title: 'Leaderboard Refresh', body: 'Leaderboard re-fetches all profiles when a new points_ledger entry arrives.' },
+      'RT3': { title: 'Admin Stats', body: 'Admin dashboard stats update in real-time as staff earn or spend points.' },
+    },
+  },
+  {
+    id: 'architecture',
+    title: 'Data Flow Architecture',
+    desc: 'React frontend communicates with Supabase via REST API (CRUD), Edge Functions (staff auth + creation), Realtime (live updates), and Storage (photos + assets). PostgreSQL enforces security via 24 RLS policies using helper functions.',
+    code: `flowchart TD
+    subgraph CLIENT["Frontend: React + Vite + TypeScript"]
+        UI["React Components<br/>15 Pages + Layouts"]
+        AUTH["AuthContext<br/>session, profile, role"]
+        VENUE["VenueContext<br/>settings, theme, logo"]
+        ROUTER["React Router v6<br/>role-based guards"]
+        UI --- AUTH
+        UI --- VENUE
+        UI --- ROUTER
+    end
+
+    subgraph SUPA["Supabase Backend"]
+        SB_AUTH["Supabase Auth<br/>email/password"]
+        EDGE["Edge Functions<br/>staff-auth + staff-create"]
+        DB[("PostgreSQL<br/>7 tables, 24 RLS policies")]
+        TRIGGERS["DB Triggers<br/>3 auto-update triggers"]
+        CRON["pg_cron<br/>nightly reset"]
+        RT["Realtime<br/>live events"]
+        STORAGE["Storage<br/>3 buckets"]
+    end
+
+    AUTH -->|"signInWithPassword"| SB_AUTH
+    AUTH -->|"POST /staff-auth"| EDGE
+    UI -->|"CRUD operations"| DB
+    DB --> TRIGGERS
+    CRON -->|"Reset assignments"| DB
+    DB -->|"Change events"| RT
+    RT -->|"Live updates"| UI
+    UI -->|"Upload / Download"| STORAGE
+    EDGE -->|"Verify PIN hash"| DB`,
+    tooltips: {
+      'UI': { title: 'React Components', body: '15 page components across 3 role layouts, plus shared components like RequireAuth, AvatarBuilder, etc.' },
+      'AUTH': { title: 'AuthContext', body: 'Central state: session, user, profile, loading, isStaffAuth. Provides adminLogin(), staffLogin(), logout(), refreshProfile().' },
+      'VENUE': { title: 'VenueContext', body: 'Venue data and settings: colors, logo URL, app name. Applied as CSS custom properties.' },
+      'ROUTER': { title: 'React Router v6', body: 'react-router-dom v7. RequireAuth wrapper checks role against allowedRoles. Redirects unauthorized users.' },
+      'SB_AUTH': { title: 'Supabase Auth', body: 'Handles admin/super-admin login with email+password. Manages JWT sessions. Not used for staff (custom JWT instead).' },
+      'EDGE': { title: 'Edge Functions', body: 'Two functions: staff-auth (validates PIN, issues JWT) and staff-create (hashes PIN with bcrypt, creates profile).' },
+      'DB': { title: 'PostgreSQL', body: '7 tables: venues, venue_settings, profiles, tasks, task_assignments, points_ledger, reward_redemptions. All protected by RLS.' },
+      'TRIGGERS': { title: 'Database Triggers', body: '3 triggers: recalculate points_total on ledger insert, auto-create venue_settings on venue insert, update updated_at timestamps.' },
+      'CRON': { title: 'pg_cron', body: 'Nightly job resets recurring task assignments. Creates new pending assignments for the next day.' },
+      'RT': { title: 'Supabase Realtime', body: 'WebSocket subscriptions on points_ledger INSERT events. Filtered by venue_id for security.' },
+      'STORAGE': { title: 'Storage Buckets', body: '3 buckets: task-photos ({venue_id}/{assignment_id}.ext), profile-pictures ({profile_id}.ext), venue-assets ({venue_id}/logo.ext).' },
+    },
+  },
+  {
+    id: 'routes',
+    title: 'Route Map',
+    desc: 'All 15 routes: 3 public login pages, 1 super admin route, 6 venue admin routes (inside AdminLayout), and 5 staff routes (inside StaffLayout). RequireAuth guard checks role and redirects unauthorized users.',
+    code: `flowchart TD
+    ROOT["/"] --> PUBLIC
+    ROOT --> PROTECTED
+    ROOT --> NOTFOUND["/* : 404<br/>NotFound"]
+    subgraph PUBLIC["Public Routes — No Auth Required"]
+        L1["/login<br/>Admin Login"]
+        L2["/staff-login<br/>Staff PIN Login"]
+        L3["/superadmin/login<br/>Super Admin Login"]
+    end
+    PROTECTED --> GUARD["RequireAuth<br/>Role check + redirect"]
+    GUARD -->|"role = super_admin"| SA_R
+    GUARD -->|"role = venue_admin"| AD_R
+    GUARD -->|"role = staff"| ST_R
+    subgraph SA_R["Super Admin — 1 Route"]
+        SA1["/superadmin<br/>Dashboard"]
+    end
+    subgraph AD_R["Venue Admin — AdminLayout — 6 Routes"]
+        A1["/admin/dashboard"]
+        A2["/admin/users"]
+        A3["/admin/tasks"]
+        A4["/admin/assignments"]
+        A5["/admin/rewards"]
+        A6["/admin/theme"]
+    end
+    subgraph ST_R["Staff — StaffLayout — 5 Routes"]
+        S1["/staff/dashboard"]
+        S2["/staff/tasks"]
+        S3["/staff/leaderboard"]
+        S4["/staff/rewards"]
+        S5["/staff/profile"]
+    end`,
+    tooltips: {
+      'ROOT': { title: 'Root Route', body: 'App entry point. React Router matches against all defined routes.' },
+      'PUBLIC': { title: 'Public Routes', body: 'Three login pages accessible without authentication. Each role has its own login UI.' },
+      'PROTECTED': { title: 'Protected Routes', body: 'All /admin/*, /staff/*, and /superadmin routes. Wrapped in RequireAuth component.' },
+      'NOTFOUND': { title: '404 Page', body: 'Catch-all route for undefined paths. Shows NotFound component.' },
+      'L1': { title: '/login', body: 'Venue admin email + password login. Redirects to /admin/dashboard on success.' },
+      'L2': { title: '/staff-login', body: 'Staff PIN login. Multi-step: select venue → select profile → enter PIN.' },
+      'L3': { title: '/superadmin/login', body: 'Super admin email + password login. Redirects to /superadmin on success.' },
+      'GUARD': { title: 'RequireAuth', body: 'Checks session, profile, and role. Shows spinner while loading. Redirects if unauthorized.' },
+      'SA1': { title: '/superadmin', body: 'Super admin dashboard. Single page, no sub-routes. Venue and admin management.' },
+      'A1': { title: '/admin/dashboard', body: 'Stats, pending reviews, top performers, weekly calendar. Real-time updates.' },
+      'A2': { title: '/admin/users', body: 'Staff CRUD. Create, edit, reset PIN, delete. Table view.' },
+      'A3': { title: '/admin/tasks', body: 'Task CRUD. Create, toggle active, review proposals. Table view.' },
+      'A4': { title: '/admin/assignments', body: 'Assign tasks. Review photo submissions. Approve/reject. Card/table view.' },
+      'A5': { title: '/admin/rewards', body: 'Review reward requests. Approve (generate code, deduct points) or reject.' },
+      'A6': { title: '/admin/theme', body: 'Colors, logo, app name. Live preview. Persists to venue_settings.' },
+      'S1': { title: '/staff/dashboard', body: 'Points card, today\'s tasks, real-time activity feed.' },
+      'S2': { title: '/staff/tasks', body: 'My tasks, open tasks, available tasks, propose task. Completion with confetti.' },
+      'S3': { title: '/staff/leaderboard', body: 'All staff ranked by points. Medals for top 3. Real-time updates.' },
+      'S4': { title: '/staff/rewards', body: 'Redeem drink (100pts) or bottle (1000pts) tickets. View history and codes.' },
+      'S5': { title: '/staff/profile', body: 'Avatar builder/upload, change PIN. First-login forced setup.' },
+    },
+  },
+  {
+    id: 'database',
+    title: 'Database Schema',
+    desc: 'Seven tables all scoped by venue_id. RLS policies use helper functions public.user_role() and public.user_venue_id() to enforce venue isolation. The points_ledger is append-only — balance is computed as SUM(delta).',
+    code: `erDiagram
+    VENUES ||--o{ PROFILES : "has staff and admins"
+    VENUES ||--|| VENUE_SETTINGS : "has settings"
+    VENUES ||--o{ TASKS : "has tasks"
+    VENUES ||--o{ TASK_ASSIGNMENTS : "has assignments"
+    VENUES ||--o{ POINTS_LEDGER : "tracks points"
+    VENUES ||--o{ REWARD_REDEMPTIONS : "tracks rewards"
+    PROFILES ||--o{ TASK_ASSIGNMENTS : "assigned to"
+    PROFILES ||--o{ POINTS_LEDGER : "earns or spends"
+    PROFILES ||--o{ REWARD_REDEMPTIONS : "redeems"
+    PROFILES ||--o{ TASKS : "proposes"
+    TASKS ||--o{ TASK_ASSIGNMENTS : "assigned as"
+    TASK_ASSIGNMENTS ||--o| POINTS_LEDGER : "awards points"
+
+    VENUES {
+        uuid id PK
+        text name
+        text address
+        text slug UK
+        timestamp created_at
+    }
+    VENUE_SETTINGS {
+        uuid id PK
+        uuid venue_id FK
+        text primary_color
+        text accent_color
+        text background_color
+        text logo_url
+        text app_name
+        timestamp updated_at
+    }
+    PROFILES {
+        uuid id PK
+        uuid venue_id FK
+        user_role role
+        text username UK
+        text display_name
+        text pin_hash
+        text email
+        avatar_type avatar_type
+        text avatar_url
+        jsonb avatar_config
+        integer points_total
+        timestamp created_at
+    }
+    TASKS {
+        uuid id PK
+        uuid venue_id FK
+        text title
+        text description
+        integer points
+        boolean requires_photo
+        boolean is_recurring
+        boolean is_active
+        uuid created_by FK
+        uuid proposed_by FK
+        approval_status approval_status
+        timestamp created_at
+    }
+    TASK_ASSIGNMENTS {
+        uuid id PK
+        uuid task_id FK
+        uuid venue_id FK
+        uuid assigned_to FK
+        uuid assigned_by FK
+        date due_date
+        assignment_status status
+        timestamp completed_at
+        text photo_url
+        timestamp created_at
+    }
+    POINTS_LEDGER {
+        uuid id PK
+        uuid profile_id FK
+        uuid venue_id FK
+        integer delta
+        text reason
+        uuid assignment_id FK
+        uuid created_by FK
+        timestamp created_at
+    }
+    REWARD_REDEMPTIONS {
+        uuid id PK
+        uuid profile_id FK
+        uuid venue_id FK
+        reward_type reward_type
+        integer points_spent
+        integer quantity
+        redemption_status status
+        text redemption_code
+        timestamp used_at
+        uuid approved_by FK
+        timestamp created_at
+    }`,
+    tooltips: {},
+  },
+];
+
+// ═══════════════════════════════════════════════════════
+// DIAGRAM STYLE INJECTION (role colors per theme)
+// ═══════════════════════════════════════════════════════
+const rolePalettes = {
+  dark: {
+    sa:      'fill:#2d1b69,color:#d4bbff,stroke:#7c3aed',
+    va:      'fill:#1a365d,color:#90cdf4,stroke:#3b82f6',
+    st:      'fill:#002918,color:#6ee7b7,stroke:#3ecf8e',
+    success: 'fill:#002918,color:#6ee7b7,stroke:#3ecf8e',
+    error:   'fill:#4c0519,color:#fecdd3,stroke:#f43f5e',
+    warning: 'fill:#451a03,color:#fef3c7,stroke:#f59e0b',
+    neutral: 'fill:#1f1f1f,color:#a0a0a0,stroke:#3e3e3e',
+  },
+  light: {
+    sa:      'fill:#ede9fe,color:#5b21b6,stroke:#7c3aed',
+    va:      'fill:#dbeafe,color:#1e40af,stroke:#3b82f6',
+    st:      'fill:#d1fae5,color:#065f46,stroke:#3ecf8e',
+    success: 'fill:#d1fae5,color:#065f46,stroke:#3ecf8e',
+    error:   'fill:#ffe4e6,color:#9f1239,stroke:#f43f5e',
+    warning: 'fill:#fef3c7,color:#92400e,stroke:#f59e0b',
+    neutral: 'fill:#f1f1f1,color:#525252,stroke:#e5e5e5',
+  },
+};
+
+// Map: diagram id → { nodeId: paletteKey }
+const diagramNodeStyles = {
+  'overview': {
+    SUPER: 'sa', ADMIN: 'va', STAFF: 'st',
+  },
+  'auth': {
+    I: 'sa', J: 'va',
+  },
+  'staff-login': {
+    I: 'success', N: 'warning', O: 'success',
+  },
+  'staff-workflow': {
+    AUTO: 'success', CELEBRATE: 'success', CODE: 'va',
+    PROPOSED: 'warning', RETRY: 'error',
+  },
+  'admin-workflow': {
+    DASH: 'va', A_POINTS: 'success', A_REJECT: 'error',
+    T_ACTIVE: 'success', T_REJECTED: 'error',
+  },
+  'superadmin': {
+    SA: 'sa', AUTO: 'warning',
+  },
+  'points': {
+    EARN: 'success', SPEND: 'error', REALTIME: 'va', DISPLAY: 'sa',
+  },
+  'architecture': {
+    CLIENT: 'neutral', SUPA: 'va',
+  },
+  'routes': {
+    PUBLIC: 'neutral', SA_R: 'sa', AD_R: 'va', ST_R: 'st',
+  },
+};
+
+function getStyledCode(diagramId, baseCode, theme) {
+  const nodeMap = diagramNodeStyles[diagramId];
+  if (!nodeMap) return baseCode;
+  const palette = rolePalettes[theme] || rolePalettes.dark;
+
+  // Collect unique roles used in this diagram
+  const usedRoles = [...new Set(Object.values(nodeMap))];
+
+  // classDef lines
+  const classDefs = usedRoles
+    .map(role => `    classDef ${role} ${palette[role]}`)
+    .join('\n');
+
+  // Group nodes by role for class assignments
+  const byRole = {};
+  for (const [node, role] of Object.entries(nodeMap)) {
+    (byRole[role] ||= []).push(node);
+  }
+  const classAssign = Object.entries(byRole)
+    .map(([role, nodes]) => `    class ${nodes.join(',')} ${role}`)
+    .join('\n');
+
+  return baseCode + '\n\n' + classDefs + '\n' + classAssign;
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER CARD GRID
+// ═══════════════════════════════════════════════════════
+const grid = document.getElementById('cardGrid');
+
+function buildCardGrid() {
+  grid.innerHTML = '';
+  diagrams.forEach((d, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + i;
+    card.setAttribute('data-index', i);
+    card.onclick = () => openModal(i);
+
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-preview"><pre class="mermaid">${getStyledCode(d.id, d.code, getCurrentTheme())}</pre></div>
+        <div class="card-expand"><span>Click to Explore</span></div>
+      </div>
+      <div class="card-body">
+        <div class="card-num">${i + 1}</div>
+        <h3>${d.title}</h3>
+        <p>${d.desc.length > 120 ? d.desc.slice(0, 120) + '...' : d.desc}</p>
+      </div>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT MERMAID
+// ═══════════════════════════════════════════════════════
+function initMermaid() {
+  const config = getMermaidConfig(getCurrentTheme());
+  mermaid.initialize(config);
+  buildCardGrid();
+  mermaid.run();
+}
+
+// Set icon and boot
+updateToggleIcon();
+initMermaid();
+
+// ═══════════════════════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════════════════════
+async function toggleTheme() {
+  const current = getCurrentTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  updateToggleIcon();
+
+  // Re-init mermaid with new theme and rebuild previews
+  const config = getMermaidConfig(next);
+  mermaid.initialize(config);
+  buildCardGrid();
+  await mermaid.run();
+
+  // If modal was open, re-render
+  if (modal.classList.contains('active')) {
+    renderModalDiagram();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL — FULLSCREEN VIEWER
+// ═══════════════════════════════════════════════════════
+const modal = document.getElementById('modal');
+const viewport = document.getElementById('viewport');
+const modalDiagram = document.getElementById('modalDiagram');
+const modalTitle = document.getElementById('modalTitle');
+const modalNum = document.getElementById('modalNum');
+const modalDesc = document.getElementById('modalDesc');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const zoomLabel = document.getElementById('zoomLabel');
+const tooltip = document.getElementById('tooltip');
+const ttTitle = document.getElementById('tt-title');
+const ttBody = document.getElementById('tt-body');
+
+let currentIndex = 0;
+let scale = 1;
+let panX = 0;
+let panY = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let startPanX = 0;
+let startPanY = 0;
+
+function openModal(index) {
+  currentIndex = index;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  renderModalDiagram();
+}
+
+function closeModal() {
+  modal.classList.remove('active');
+  document.body.style.overflow = '';
+  tooltip.classList.remove('visible');
+}
+
+function navigate(dir) {
+  const next = currentIndex + dir;
+  if (next < 0 || next >= diagrams.length) return;
+  currentIndex = next;
+  renderModalDiagram();
+}
+
+// Store the natural SVG dimensions after render
+let svgNaturalW = 0;
+let svgNaturalH = 0;
+
+async function renderModalDiagram() {
+  const d = diagrams[currentIndex];
+
+  modalTitle.textContent = d.title;
+  modalNum.textContent = currentIndex + 1;
+  modalDesc.textContent = d.desc;
+  prevBtn.disabled = currentIndex === 0;
+  nextBtn.disabled = currentIndex === diagrams.length - 1;
+
+  // Render diagram
+  const id = 'modal-diagram-' + Date.now();
+  try {
+    const { svg } = await mermaid.render(id, getStyledCode(d.id, d.code, getCurrentTheme()));
+    modalDiagram.innerHTML = svg;
+  } catch (e) {
+    modalDiagram.innerHTML = '<p style="color:#fb7185; padding:40px;">Failed to render diagram.</p>';
+    return;
+  }
+
+  // Process the SVG: get real dimensions, then make it scale properly
+  const svgEl = modalDiagram.querySelector('svg');
+  if (svgEl) {
+    const vb = svgEl.getAttribute('viewBox');
+    if (vb) {
+      const parts = vb.split(/[\s,]+/).map(Number);
+      svgNaturalW = parts[2] || 800;
+      svgNaturalH = parts[3] || 600;
+    } else {
+      svgNaturalW = parseFloat(svgEl.getAttribute('width')) || svgEl.getBoundingClientRect().width || 800;
+      svgNaturalH = parseFloat(svgEl.getAttribute('height')) || svgEl.getBoundingClientRect().height || 600;
+    }
+
+    svgEl.removeAttribute('width');
+    svgEl.removeAttribute('height');
+    svgEl.removeAttribute('style');
+    if (!svgEl.getAttribute('viewBox')) {
+      svgEl.setAttribute('viewBox', `0 0 ${svgNaturalW} ${svgNaturalH}`);
+    }
+    svgEl.style.width = svgNaturalW + 'px';
+    svgEl.style.height = svgNaturalH + 'px';
+    svgEl.style.display = 'block';
+    svgEl.style.overflow = 'visible';
+  }
+
+  // Fit to viewport
+  requestAnimationFrame(() => {
+    resetZoom();
+    attachTooltips(d.tooltips);
+  });
+}
+
+function resetZoom() {
+  if (!svgNaturalW || !svgNaturalH) return;
+
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+
+  const padding = 80;
+  const scaleX = (vw - padding) / svgNaturalW;
+  const scaleY = (vh - padding) / svgNaturalH;
+  scale = Math.min(scaleX, scaleY);
+
+  const scaledW = svgNaturalW * scale;
+  const scaledH = svgNaturalH * scale;
+  panX = (vw - scaledW) / 2;
+  panY = (vh - scaledH) / 2;
+
+  applyTransform();
+}
+
+function zoomIn() {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  zoomAt(vw / 2, vh / 2, 1.25);
+}
+
+function zoomOut() {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  zoomAt(vw / 2, vh / 2, 0.8);
+}
+
+function zoomAt(cx, cy, factor) {
+  const newScale = Math.min(Math.max(scale * factor, 0.2), 5);
+  const ratio = newScale / scale;
+  panX = cx - (cx - panX) * ratio;
+  panY = cy - (cy - panY) * ratio;
+  scale = newScale;
+  applyTransform();
+}
+
+function applyTransform() {
+  modalDiagram.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  modalDiagram.style.transformOrigin = '0 0';
+  zoomLabel.textContent = Math.round(scale * 100) + '%';
+}
+
+// ─── PAN (drag) ───
+viewport.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  isDragging = true;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  startPanX = panX;
+  startPanY = panY;
+  viewport.classList.add('dragging');
+  e.preventDefault();
+});
+
+window.addEventListener('mousemove', (e) => {
+  tooltip.style.left = (e.clientX + 16) + 'px';
+  tooltip.style.top = (e.clientY + 16) + 'px';
+
+  const tt = tooltip.getBoundingClientRect();
+  if (tt.right > window.innerWidth) tooltip.style.left = (e.clientX - tt.width - 8) + 'px';
+  if (tt.bottom > window.innerHeight) tooltip.style.top = (e.clientY - tt.height - 8) + 'px';
+
+  if (!isDragging) return;
+  panX = startPanX + (e.clientX - dragStartX);
+  panY = startPanY + (e.clientY - dragStartY);
+  applyTransform();
+});
+
+window.addEventListener('mouseup', () => {
+  isDragging = false;
+  viewport.classList.remove('dragging');
+});
+
+// ─── ZOOM (scroll) ───
+viewport.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = viewport.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  zoomAt(cx, cy, factor);
+}, { passive: false });
+
+// ─── TOUCH support ───
+let lastTouchDist = 0;
+let lastTouchCenter = null;
+
+viewport.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    isDragging = true;
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
+    startPanX = panX;
+    startPanY = panY;
+  } else if (e.touches.length === 2) {
+    isDragging = false;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+    lastTouchCenter = {
+      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+      y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+    };
+  }
+  e.preventDefault();
+}, { passive: false });
+
+viewport.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1 && isDragging) {
+    panX = startPanX + (e.touches[0].clientX - dragStartX);
+    panY = startPanY + (e.touches[0].clientY - dragStartY);
+    applyTransform();
+  } else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (lastTouchDist > 0) {
+      const rect = viewport.getBoundingClientRect();
+      const cx = lastTouchCenter.x - rect.left;
+      const cy = lastTouchCenter.y - rect.top;
+      zoomAt(cx, cy, dist / lastTouchDist);
+    }
+    lastTouchDist = dist;
+    lastTouchCenter = {
+      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+      y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+    };
+  }
+  e.preventDefault();
+}, { passive: false });
+
+viewport.addEventListener('touchend', () => {
+  isDragging = false;
+  lastTouchDist = 0;
+  lastTouchCenter = null;
+});
+
+// ─── KEYBOARD ───
+document.addEventListener('keydown', (e) => {
+  if (!modal.classList.contains('active')) return;
+
+  switch (e.key) {
+    case 'Escape': closeModal(); break;
+    case 'ArrowLeft': navigate(-1); break;
+    case 'ArrowRight': navigate(1); break;
+    case '+': case '=': zoomIn(); e.preventDefault(); break;
+    case '-': case '_': zoomOut(); e.preventDefault(); break;
+    case '0': resetZoom(); e.preventDefault(); break;
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// TOOLTIPS
+// ═══════════════════════════════════════════════════════
+function attachTooltips(tooltipData) {
+  if (!tooltipData || Object.keys(tooltipData).length === 0) return;
+
+  const svgEl = modalDiagram.querySelector('svg');
+  if (!svgEl) return;
+
+  const allGroups = svgEl.querySelectorAll('g[id]');
+
+  allGroups.forEach(g => {
+    const gId = g.getAttribute('id') || '';
+
+    for (const [key, data] of Object.entries(tooltipData)) {
+      if (gId.includes('-' + key + '-') || gId.includes('-' + key) || gId === key) {
+        const rects = g.querySelectorAll('rect, polygon, circle, path');
+        rects.forEach(r => {
+          r.style.cursor = 'pointer';
+          r.style.transition = 'filter 0.15s';
+        });
+
+        g.addEventListener('mouseenter', () => {
+          ttTitle.textContent = data.title;
+          ttBody.textContent = data.body;
+          tooltip.classList.add('visible');
+          rects.forEach(r => r.style.filter = 'brightness(1.3) drop-shadow(0 0 6px rgba(62, 207, 142, 0.5))');
+        });
+
+        g.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('visible');
+          rects.forEach(r => r.style.filter = '');
+        });
+
+        break;
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
