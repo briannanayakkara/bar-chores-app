@@ -35,11 +35,6 @@ jobs:
 
       - name: Build with Vercel
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL_DEV }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY_DEV }}
-          VITE_ENV: development
-          VITE_APP_TITLE: "Bar Chores [DEV]"
 
       - name: Deploy to Vercel (Preview)
         id: deploy
