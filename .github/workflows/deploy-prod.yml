@@ -35,6 +35,11 @@ jobs:
 
       - name: Build with Vercel (Production)
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL_PROD }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY_PROD }}
+          VITE_ENV: production
+          VITE_APP_TITLE: "Bar Chores"
 
       - name: Deploy to Vercel (Production)
         id: deploy
