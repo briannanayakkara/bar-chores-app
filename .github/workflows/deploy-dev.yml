@@ -42,5 +42,10 @@ jobs:
           url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
+      - name: Alias to stable dev URL
+        run: vercel alias ${{ steps.deploy.outputs.url }} bar-chores-dev.vercel.app --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Print deployment URL
-        run: echo "Deployed to ${{ steps.deploy.outputs.url }}"
+        run: |
+          echo "Deployed to ${{ steps.deploy.outputs.url }}"
+          echo "Stable dev URL: https://bar-chores-dev.vercel.app"
