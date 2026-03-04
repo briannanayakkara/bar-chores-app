@@ -369,7 +369,44 @@ flowchart TD
 
 ---
 
-## 10. Database Schema Relationships
+## 10. Environment & CI/CD Pipeline
+
+```mermaid
+flowchart TD
+    subgraph GIT["Git Repository"]
+        FEAT["feature/* branch"] -->|PR| DEV_BR["develop branch"]
+        DEV_BR -->|PR| MAIN["main branch"]
+    end
+
+    subgraph CI_DEV["GitHub Actions — Deploy DEV"]
+        DEV_BR --> D1["Checkout + npm ci"]
+        D1 --> D2["Type check: tsc -b"]
+        D2 --> D3["vercel pull --preview"]
+        D3 --> D4["vercel build"]
+        D4 --> D5["vercel deploy --prebuilt"]
+    end
+
+    subgraph CI_PROD["GitHub Actions — Deploy PROD"]
+        MAIN --> P1["Checkout + npm ci"]
+        P1 --> P2["Type check: tsc -b"]
+        P2 --> P3["vercel pull --production"]
+        P3 --> P4["vercel build --prod"]
+        P4 --> P5["vercel deploy --prebuilt --prod"]
+    end
+
+    D5 --> DEV_URL["Preview URL<br/>Bar Chores DEV"]
+    P5 --> PROD_URL["bar-chores-app.vercel.app<br/>Bar Chores"]
+
+    DEV_URL --> DEV_SB["DEV Supabase<br/>drwflvxdvwtjzuqxfort<br/>Dummy data"]
+    PROD_URL --> PROD_SB["PROD Supabase<br/>sepcdjmwdfjjieaxqoqn<br/>Real data"]
+
+    DEV_URL --> DEV_BADGE["Orange DEV badge<br/>visible on every page"]
+    PROD_URL --> NO_BADGE["No badge<br/>clean production UI"]
+```
+
+---
+
+## 11. Database Schema Relationships
 
 ```mermaid
 erDiagram
@@ -458,4 +495,4 @@ erDiagram
 
 ---
 
-*Generated for Bar Chores App v1.8.2 — March 2026*
+*Generated for Bar Chores App v1.8.3 — March 2026*

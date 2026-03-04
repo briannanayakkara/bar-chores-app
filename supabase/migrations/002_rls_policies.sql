@@ -171,3 +171,20 @@ CREATE POLICY "staff_insert_own_rewards" ON reward_redemptions
     AND venue_id = public.user_venue_id()
     AND public.user_role() = 'staff'
   );
+
+-- ============================================
+-- PUBLIC / ANONYMOUS POLICIES
+-- Needed for login pages before authentication
+-- ============================================
+
+-- Staff login page needs to list venues
+CREATE POLICY "anon_read_venues" ON venues
+  FOR SELECT USING (true);
+
+-- Staff login page needs venue theme colours
+CREATE POLICY "anon_read_venue_settings" ON venue_settings
+  FOR SELECT USING (true);
+
+-- Staff login page shows staff profile cards
+CREATE POLICY "anon_read_staff_profiles" ON profiles
+  FOR SELECT USING (role = 'staff');

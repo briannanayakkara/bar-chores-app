@@ -2,7 +2,7 @@
 
 > Gamified bar staff task management — staff earn points for completing chores and redeem them for drink or bottle tickets. Multi-venue, mobile-first, built with React + Vite + TypeScript + Supabase + Tailwind CSS.
 
-**Version:** 1.8.2
+**Version:** 1.8.3
 **Live URL:** https://bar-chores-app.vercel.app
 
 ---
@@ -273,7 +273,7 @@ Avatars also appear on: staff dashboard header, live activity feed, admin user m
 ## ☁️ Supabase Setup Checklist
 
 - [x] 7 tables created with schema above
-- [x] RLS enabled on all tables with venue-scoped policies
+- [x] RLS enabled on all tables with 27 venue-scoped policies (including 3 anonymous read policies for login pages)
 - [x] Storage buckets: `task-photos` (private), `venue-assets` (public), `profile-pictures` (public)
 - [x] Edge Function for staff PIN → magic link authentication
 - [x] pg_cron: nightly midnight reset of recurring task assignments
@@ -283,7 +283,7 @@ Avatars also appear on: staff dashboard header, live activity feed, admin user m
 - [x] Super admin user seeded directly in Supabase dashboard
 - [x] Email confirmations turned OFF in Supabase Auth settings
 - [x] RLS helper functions: `public.user_role()` and `public.user_venue_id()` (SECURITY DEFINER)
-- [x] Public SELECT policy on `venue_settings` for unauthenticated staff login page
+- [x] Public SELECT policies: `anon_read_venues`, `anon_read_venue_settings`, `anon_read_staff_profiles` (for unauthenticated login pages)
 
 ---
 
@@ -329,6 +329,8 @@ bar-chores-app/
 │   │   ├── superadmin/
 │   │   ├── admin/
 │   │   └── staff/
+│   ├── config/
+│   │   └── environment.ts      ← ENV, IS_DEV, IS_PROD, APP_TITLE
 │   ├── lib/
 │   │   ├── supabase.ts         ← Supabase client
 │   │   ├── color.ts            ← hexToRgb(), DEFAULT_COLORS/RGB
@@ -341,7 +343,9 @@ bar-chores-app/
 │   └── functions/
 │       └── staff-auth/
 │           └── index.ts        ← PIN → magic link Edge Function
-├── .env                        ← never commit this
+├── .env.production              ← prod credentials (gitignored)
+├── .env.development             ← dev credentials (gitignored)
+├── .env.example                 ← template with empty values (committed)
 ├── .gitignore
 ├── vercel.json                 ← SPA rewrites + cache headers
 ├── tailwind.config.js          ← custom colours via CSS variables
