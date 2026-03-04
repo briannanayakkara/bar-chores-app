@@ -3,6 +3,7 @@
 Gamified bar staff task management — staff earn points for completing chores and redeem them for drink or bottle tickets. Multi-venue, mobile-first, built for real bar operations.
 
 **Live:** https://bar-chores-app.vercel.app
+**Architecture Flowcharts:** [View interactive diagrams](https://briannanayakkara.github.io/bar-chores-app/)
 
 ---
 
