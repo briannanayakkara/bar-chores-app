@@ -4,7 +4,11 @@
       "Bash(npm create:*)",
       "Bash(node:*)",
       "Bash(curl:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__claude_ai_Mermaid_Chart_2__validate_and_render_mermaid_diagram",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:mermaid.ai)"
     ]
   }
 }
