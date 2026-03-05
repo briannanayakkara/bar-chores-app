@@ -34,8 +34,20 @@ export default function SuperAdminDashboard() {
   const [inviteDisplayName, setInviteDisplayName] = useState('');
   const [inviting, setInviting] = useState(false);
 
+  // Unassigned admins
+  const [unassignedAdmins, setUnassignedAdmins] = useState<Profile[]>([]);
+
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  async function loadUnassignedAdmins() {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'venue_admin')
+      .is('venue_id', null);
+    if (data) setUnassignedAdmins(data as Profile[]);
+  }
 
   async function loadVenues() {
     logger.api('Loading venues...');
@@ -61,7 +73,7 @@ export default function SuperAdminDashboard() {
     setLoading(false);
   }
 
-  useEffect(() => { loadVenues(); }, []);
+  useEffect(() => { loadVenues(); loadUnassignedAdmins(); }, []);
 
   function autoSlug(name: string) {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -119,18 +131,33 @@ export default function SuperAdminDashboard() {
     loadVenues();
   }
 
-  async function handleDeleteAdmin(admin: Profile) {
-    if (!confirm(`Remove admin "${admin.display_name || admin.email}"? Their tasks will be reassigned to you.`)) return;
+  async function handleUnassignAdmin(admin: Profile) {
+    if (!confirm(`Unassign "${admin.display_name || admin.email}" from this venue?`)) return;
     setError('');
     setMessage('');
 
-    const { error: err } = await adminAction('delete-admin', { admin_id: admin.id });
+    const { error: err } = await adminAction('unassign-admin', { admin_id: admin.id });
     if (err) {
-      setError(`Delete failed: ${err}`);
+      setError(err);
     } else {
-      setMessage(`Removed admin "${admin.display_name || admin.email}"`);
+      setMessage(`Unassigned "${admin.display_name || admin.email}"`);
     }
     loadVenues();
+    loadUnassignedAdmins();
+  }
+
+  async function handleReassignAdmin(adminId: string, venueId: string) {
+    setError('');
+    setMessage('');
+
+    const { error: err } = await adminAction('assign-admin', { admin_id: adminId, venue_id: venueId });
+    if (err) {
+      setError(err);
+    } else {
+      setMessage('Admin assigned to venue');
+    }
+    loadVenues();
+    loadUnassignedAdmins();
   }
 
   async function handleAssignAdmin(e: React.FormEvent) {
@@ -373,6 +400,39 @@ export default function SuperAdminDashboard() {
           </form>
         )}
 
+        {/* Unassigned Admins */}
+        {unassignedAdmins.length > 0 && (
+          <div className="bg-slate-800 border border-yellow-500/30 rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-yellow-400 mb-3">Unassigned Admins</h2>
+            <p className="text-sm text-slate-400 mb-4">These admins are not assigned to any venue. Assign them below.</p>
+            <div className="space-y-3">
+              {unassignedAdmins.map(admin => (
+                <div key={admin.id} className="flex items-center justify-between py-2 border-b border-slate-700/50 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-sm font-bold">
+                      {(admin.display_name || admin.email || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="text-white text-sm font-medium">{admin.display_name || 'Unnamed'}</span>
+                      <span className="text-slate-400 text-sm ml-2">{admin.email}</span>
+                    </div>
+                  </div>
+                  <select
+                    onChange={(e) => { if (e.target.value) handleReassignAdmin(admin.id, e.target.value); e.target.value = ''; }}
+                    defaultValue=""
+                    className="px-3 py-1.5 text-sm bg-slate-700 border border-slate-600 rounded-lg text-white"
+                  >
+                    <option value="" disabled>Assign to...</option>
+                    {venues.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Venues List */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">All Venues</h2>
@@ -450,10 +510,10 @@ export default function SuperAdminDashboard() {
                             </div>
                           ) : (
                             <button
-                              onClick={() => handleDeleteAdmin(admin)}
-                              className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                              onClick={() => handleUnassignAdmin(admin)}
+                              className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors"
                             >
-                              Remove
+                              Unassign
                             </button>
                           )}
                         </div>
