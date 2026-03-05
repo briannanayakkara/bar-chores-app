@@ -120,12 +120,13 @@ export default function SuperAdminDashboard() {
   }
 
   async function handleDeleteAdmin(admin: Profile) {
-    if (!confirm(`Remove admin "${admin.display_name || admin.email}"?`)) return;
+    if (!confirm(`Remove admin "${admin.display_name || admin.email}"? Their tasks will be reassigned to you.`)) return;
     setError('');
+    setMessage('');
 
-    const { error: err } = await supabase.from('profiles').delete().eq('id', admin.id);
+    const { error: err } = await adminAction('delete-admin', { admin_id: admin.id });
     if (err) {
-      setError(`Delete failed: ${err.message}`);
+      setError(`Delete failed: ${err}`);
     } else {
       setMessage(`Removed admin "${admin.display_name || admin.email}"`);
     }
