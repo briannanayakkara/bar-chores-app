@@ -179,6 +179,45 @@ A multi-venue, mobile-first web app that turns bar staff chores into a points-ba
 
 ---
 
+## 📧 Admin Onboarding & Password Reset
+
+### How Super Admin Creates Venue Admins
+1. Super Admin logs in at `/superadmin`
+2. Clicks "Invite Admin" on a venue → enters name and email
+3. Supabase sends an invite email with a link to the app
+4. New admin clicks the link → `/auth/callback` → redirected to `/auth/set-password`
+5. Sets their password → redirected to `/login`
+6. Logs in with email + new password → lands on `/admin/dashboard`
+7. Profile status updates from `pending` to `active`
+
+The existing "Add Admin" (instant password) flow is still available as an alternative.
+
+### How Venue Admins Create Additional Admins
+1. Venue Admin goes to `/admin/users`
+2. Clicks "Invite Admin" → enters name and email
+3. Same email flow as above — invite is scoped to their venue only
+4. New admin appears in the admin list with a "Pending" badge
+5. Venue Admin can resend or cancel the invite
+
+### Password Reset Flow
+1. Admin visits `/login` → clicks "Forgot password?"
+2. Enters email → receives reset email with correct link
+3. Clicks link → `/auth/callback` → `/auth/set-password`
+4. Sets new password → redirected to `/login`
+
+### Auth Callback URL Configuration
+Both Supabase projects must have these auth settings:
+
+**PROD** (`sepcdjmwdfjjieaxqoqn`):
+- Site URL: `https://bar-chores-app.vercel.app`
+- Redirect URLs: `.../auth/callback`, `.../auth/set-password`
+
+**DEV** (`drwflvxdvwtjzuqxfort`):
+- Site URL: `https://bar-chores-dev.vercel.app`
+- Redirect URLs: `.../auth/callback`, `.../auth/set-password`, plus `http://localhost:5173/auth/callback`, `http://localhost:5173/auth/set-password`
+
+---
+
 ## ⚡ Points & Rewards
 
 ### Earning Points
@@ -256,6 +295,9 @@ Avatars also appear on: staff dashboard header, live activity feed, admin user m
 | `/staff/leaderboard` | Staff | All venue staff ranked by points |
 | `/staff/rewards` | Staff | Request redemptions, view history |
 | `/staff/profile` | Staff | Update photo/avatar, change PIN |
+| `/auth/callback` | Public | Handles email link redirects (invite, recovery) |
+| `/auth/set-password` | Public | Set or reset password form |
+| `/auth/forgot-password` | Public | Request password reset email |
 
 ---
 
