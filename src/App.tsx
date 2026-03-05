@@ -26,6 +26,11 @@ import StaffLeaderboard from './pages/staff/StaffLeaderboard';
 import StaffRewards from './pages/staff/StaffRewards';
 import StaffProfile from './pages/staff/StaffProfile';
 
+// Auth
+import AuthCallback from './pages/auth/AuthCallback';
+import SetPassword from './pages/auth/SetPassword';
+import ForgotPassword from './pages/auth/ForgotPassword';
+
 // Shared
 import NotFound from './pages/NotFound';
 
@@ -37,6 +42,9 @@ export default function App() {
       <Route path="/login" element={<AdminLogin />} />
       <Route path="/staff-login" element={<StaffLogin />} />
       <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/set-password" element={<SetPassword />} />
+      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
 
       {/* Super Admin */}
       <Route path="/superadmin" element={
