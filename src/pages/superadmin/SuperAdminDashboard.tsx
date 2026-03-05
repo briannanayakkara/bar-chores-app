@@ -21,12 +21,18 @@ export default function SuperAdminDashboard() {
   const [venueSlug, setVenueSlug] = useState('');
   const [creating, setCreating] = useState(false);
 
-  // Assign admin form
+  // Assign admin form (instant password)
   const [assignVenueId, setAssignVenueId] = useState<string | null>(null);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminDisplayName, setAdminDisplayName] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [assigning, setAssigning] = useState(false);
+
+  // Invite admin form (email invite)
+  const [inviteVenueId, setInviteVenueId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteDisplayName, setInviteDisplayName] = useState('');
+  const [inviting, setInviting] = useState(false);
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -153,6 +159,47 @@ export default function SuperAdminDashboard() {
       loadVenues();
     }
     setAssigning(false);
+  }
+
+  async function handleInviteAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!inviteVenueId) return;
+    setInviting(true);
+    setError('');
+    setMessage('');
+
+    logger.api('Inviting admin via Edge Function', { email: inviteEmail, venueId: inviteVenueId });
+
+    const { error: err } = await adminAction('invite-admin', {
+      email: inviteEmail,
+      display_name: inviteDisplayName,
+      venue_id: inviteVenueId,
+    });
+
+    if (err) {
+      logger.error('Admin invite failed', err);
+      setError(err);
+    } else {
+      logger.api('Admin invite sent OK');
+      setMessage(`Invite sent to ${inviteEmail}`);
+      setInviteEmail(''); setInviteDisplayName('');
+      setInviteVenueId(null);
+      loadVenues();
+    }
+    setInviting(false);
+  }
+
+  async function handleResendInvite(admin: Profile) {
+    setError(''); setMessage('');
+    const { error: err } = await adminAction('resend-invite', { user_id: admin.id });
+    if (err) { setError(err); } else { setMessage(`Invite resent to ${admin.email}`); }
+  }
+
+  async function handleCancelInvite(admin: Profile) {
+    if (!confirm(`Cancel invite for "${admin.display_name || admin.email}"?`)) return;
+    setError(''); setMessage('');
+    const { error: err } = await adminAction('cancel-invite', { user_id: admin.id });
+    if (err) { setError(err); } else { setMessage('Invite cancelled'); loadVenues(); }
   }
 
   return (
@@ -286,6 +333,45 @@ export default function SuperAdminDashboard() {
           </form>
         )}
 
+        {/* Invite Admin Form */}
+        {inviteVenueId && (
+          <form onSubmit={handleInviteAdmin} className="bg-slate-800 border border-slate-700 rounded-xl p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-white">
+              Invite Admin to {venues.find(v => v.id === inviteVenueId)?.name}
+            </h2>
+            <p className="text-sm text-slate-400">An email invitation will be sent. The admin sets their own password.</p>
+            <div>
+              <label className="block text-sm text-slate-300 mb-1">Admin Email *</label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                placeholder="admin@venue.com"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-300 mb-1">Display Name *</label>
+              <input
+                value={inviteDisplayName}
+                onChange={e => setInviteDisplayName(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                placeholder="Jane Smith"
+                required
+              />
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" disabled={inviting} className="px-6 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-500 disabled:opacity-50 min-h-[48px]">
+                {inviting ? 'Sending...' : 'Send Invite'}
+              </button>
+              <button type="button" onClick={() => setInviteVenueId(null)} className="px-6 py-2.5 text-slate-300 hover:text-white border border-slate-600 rounded-lg min-h-[48px]">
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
         {/* Venues List */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">All Venues</h2>
@@ -309,7 +395,13 @@ export default function SuperAdminDashboard() {
                   </div>
                   <div className="flex gap-3">
                     <button
-                      onClick={() => { setAssignVenueId(venue.id); setShowCreate(false); }}
+                      onClick={() => { setInviteVenueId(venue.id); setAssignVenueId(null); setShowCreate(false); }}
+                      className="px-3 py-1.5 text-sm text-green-400 hover:text-green-300 border border-green-400/30 rounded-lg transition-colors"
+                    >
+                      Invite Admin
+                    </button>
+                    <button
+                      onClick={() => { setAssignVenueId(venue.id); setInviteVenueId(null); setShowCreate(false); }}
                       className="px-3 py-1.5 text-sm text-accent hover:text-primary border border-accent/30 rounded-lg transition-colors"
                     >
                       + Add Admin
@@ -339,14 +431,30 @@ export default function SuperAdminDashboard() {
                             <div>
                               <span className="text-white text-sm font-medium">{admin.display_name || 'Unnamed'}</span>
                               <span className="text-slate-400 text-sm ml-2">{admin.email}</span>
+                              {admin.status === 'pending' && (
+                                <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-400 rounded-full">
+                                  Pending
+                                </span>
+                              )}
                             </div>
                           </div>
-                          <button
-                            onClick={() => handleDeleteAdmin(admin)}
-                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
-                          >
-                            Remove
-                          </button>
+                          {admin.status === 'pending' ? (
+                            <div className="flex gap-2">
+                              <button onClick={() => handleResendInvite(admin)} className="text-xs text-accent hover:text-primary transition-colors">
+                                Resend
+                              </button>
+                              <button onClick={() => handleCancelInvite(admin)} className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleDeleteAdmin(admin)}
+                              className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>

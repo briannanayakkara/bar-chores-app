@@ -247,6 +247,142 @@ serve(async (req) => {
         return jsonResponse({ success: true, message: 'Staff deleted' });
       }
 
+      case 'invite-admin': {
+        // Super admins can invite to any venue; venue admins only to their own
+        if (callerProfile.role === 'venue_admin' && callerProfile.venue_id !== params.venue_id) {
+          return jsonResponse({ error: 'Cannot invite admins to another venue' }, 403);
+        }
+        if (!['super_admin', 'venue_admin'].includes(callerProfile.role)) {
+          return jsonResponse({ error: 'Only admins can invite other admins' }, 403);
+        }
+
+        const { email, display_name, venue_id } = params;
+        if (!email || !display_name || !venue_id) {
+          return jsonResponse({ error: 'Missing required fields: email, display_name, venue_id' }, 400);
+        }
+
+        // Determine the redirect URL from the request origin
+        const origin = req.headers.get('origin') || 'https://bar-chores-app.vercel.app';
+        const redirectTo = `${origin}/auth/callback`;
+
+        // Send invite email via Supabase Auth admin API
+        const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
+          email as string,
+          {
+            redirectTo,
+            data: { display_name, venue_id, role: 'venue_admin' },
+          }
+        );
+
+        if (inviteErr) {
+          return jsonResponse({ error: `Invite failed: ${inviteErr.message}` }, 400);
+        }
+        if (!inviteData.user) {
+          return jsonResponse({ error: 'No user returned from invite' }, 500);
+        }
+
+        // Create profile row with pending status
+        const { error: profileErr } = await adminClient.from('profiles').insert({
+          id: inviteData.user.id,
+          venue_id,
+          role: 'venue_admin',
+          email,
+          display_name,
+          status: 'pending',
+        });
+
+        if (profileErr) {
+          return jsonResponse({ error: `Profile creation failed: ${profileErr.message}` }, 500);
+        }
+
+        return jsonResponse({
+          success: true,
+          user_id: inviteData.user.id,
+          message: `Invite sent to ${email}`,
+        });
+      }
+
+      case 'resend-invite': {
+        if (!['super_admin', 'venue_admin'].includes(callerProfile.role)) {
+          return jsonResponse({ error: 'Only admins can resend invites' }, 403);
+        }
+
+        const { user_id } = params;
+        if (!user_id) {
+          return jsonResponse({ error: 'Missing user_id' }, 400);
+        }
+
+        // Look up the pending profile
+        const { data: pendingProfile } = await adminClient
+          .from('profiles')
+          .select('id, email, venue_id, status')
+          .eq('id', user_id)
+          .single();
+
+        if (!pendingProfile) {
+          return jsonResponse({ error: 'User not found' }, 404);
+        }
+        if (pendingProfile.status !== 'pending') {
+          return jsonResponse({ error: 'User has already accepted their invite' }, 400);
+        }
+
+        // Venue admins can only resend for their own venue
+        if (callerProfile.role === 'venue_admin' && callerProfile.venue_id !== pendingProfile.venue_id) {
+          return jsonResponse({ error: 'Cannot resend invites for another venue' }, 403);
+        }
+
+        const origin = req.headers.get('origin') || 'https://bar-chores-app.vercel.app';
+        const redirectTo = `${origin}/auth/callback`;
+
+        // Generate a new invite link
+        const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
+          pendingProfile.email as string,
+          { redirectTo }
+        );
+
+        if (inviteErr) {
+          return jsonResponse({ error: `Resend failed: ${inviteErr.message}` }, 400);
+        }
+
+        return jsonResponse({ success: true, message: `Invite resent to ${pendingProfile.email}` });
+      }
+
+      case 'cancel-invite': {
+        if (!['super_admin', 'venue_admin'].includes(callerProfile.role)) {
+          return jsonResponse({ error: 'Only admins can cancel invites' }, 403);
+        }
+
+        const { user_id } = params;
+        if (!user_id) {
+          return jsonResponse({ error: 'Missing user_id' }, 400);
+        }
+
+        // Look up the pending profile
+        const { data: pendingProfile } = await adminClient
+          .from('profiles')
+          .select('id, venue_id, status')
+          .eq('id', user_id)
+          .single();
+
+        if (!pendingProfile) {
+          return jsonResponse({ error: 'User not found' }, 404);
+        }
+        if (pendingProfile.status !== 'pending') {
+          return jsonResponse({ error: 'Cannot cancel — user has already accepted' }, 400);
+        }
+
+        // Venue admins can only cancel for their own venue
+        if (callerProfile.role === 'venue_admin' && callerProfile.venue_id !== pendingProfile.venue_id) {
+          return jsonResponse({ error: 'Cannot cancel invites for another venue' }, 403);
+        }
+
+        // Delete profile then auth user
+        await adminClient.from('profiles').delete().eq('id', user_id);
+        await adminClient.auth.admin.deleteUser(user_id as string).catch(() => {});
+
+        return jsonResponse({ success: true, message: 'Invite cancelled' });
+      }
+
       default:
         return jsonResponse({ error: `Unknown action: ${action}` }, 400);
     }

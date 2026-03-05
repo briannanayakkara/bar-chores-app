@@ -25,6 +25,8 @@ export interface VenueSettings {
   updated_at: string;
 }
 
+export type ProfileStatus = 'pending' | 'active' | 'inactive';
+
 export interface Profile {
   id: string;
   venue_id: string | null;
@@ -37,6 +39,7 @@ export interface Profile {
   avatar_url: string | null;
   avatar_config: Record<string, unknown> | null;
   points_total: number;
+  status: ProfileStatus;
   created_at: string;
 }
 

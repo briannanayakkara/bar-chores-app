@@ -60,6 +60,12 @@ export default function AdminLogin() {
             />
           </div>
 
+          <div className="text-right">
+            <Link to="/auth/forgot-password" className="text-sm text-accent hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
