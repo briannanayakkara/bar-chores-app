@@ -635,7 +635,7 @@ const diagrams = [
 
     subgraph SUPER["Super Admin Panel"]
         SA --> SA1["Create / Delete<br/>Venues"]
-        SA --> SA2["Assign / Remove<br/>Venue Admins"]
+        SA --> SA2["Assign / Unassign<br/>Venue Admins"]
     end
 
     subgraph ADMIN["Venue Admin Panel"]
@@ -660,7 +660,7 @@ const diagrams = [
       'VA': { title: 'Venue Admin', body: 'Bar manager. Manages staff, tasks, assignments, rewards, and venue theme. Scoped to one venue via RLS.' },
       'ST': { title: 'Staff', body: 'Bar staff member. Uses PIN-based login (no email needed). Completes tasks, earns points, redeems rewards.' },
       'SA1': { title: 'Venue Management', body: 'Create new venues (name + address, auto-generates URL slug). Delete venues cascades all related data.' },
-      'SA2': { title: 'Admin Assignment', body: 'Assign a venue_admin profile to a venue. Creates a new profile row with role=venue_admin.' },
+      'SA2': { title: 'Admin Assignment', body: 'Invite, unassign, and reassign venue admins. Admins are never deleted — only moved between venues or to an unassigned pool.' },
       'VA1': { title: 'Dashboard & Analytics', body: 'Stats cards (active staff, pending, tasks today, points), pending reviews, top performers leaderboard, weekly calendar.' },
       'VA2': { title: 'Staff Management', body: 'Create staff accounts (username + PIN via Edge Function), edit, reset PINs, delete staff.' },
       'VA3': { title: 'Task Management', body: 'Create tasks with title, description, points, photo requirement, recurring flag. Review staff-proposed tasks.' },
@@ -699,7 +699,7 @@ const diagrams = [
       'F': { title: 'Profile Fetch', body: 'Uses direct fetch() to REST API instead of supabase client — works around corporate firewall issues with Supabase realtime.' },
       'G': { title: 'Auth State Change', body: 'Supabase onAuthStateChange listener fires, triggering profile load into AuthContext.' },
       'H': { title: 'Role Check', body: 'RequireAuth component checks profile.role against allowedRoles for the route.' },
-      'I': { title: 'Super Admin Dashboard', body: 'Single page at /superadmin — manage all venues and assign admins.' },
+      'I': { title: 'Super Admin Dashboard', body: 'Single page at /superadmin — manage all venues, invite/unassign/reassign admins.' },
       'J': { title: 'Admin Dashboard', body: 'Venue admin landing page — stats, pending reviews, top performers, weekly calendar.' },
       'K': { title: 'Wrong Role Redirect', body: 'If a staff member tries /login, they get redirected to /staff-login, and vice versa.' },
     },
@@ -807,7 +807,7 @@ const diagrams = [
   {
     id: 'admin-workflow',
     title: 'Venue Admin Workflow',
-    desc: 'Six sections: Dashboard (stats, reviews, performers, calendar), Staff Management (CRUD via Edge Functions), Task Management (create, toggle, review proposals), Assignments (assign, review photos), Rewards (approve, generate codes), Theme (colors, logo, app name).',
+    desc: 'Six sections: Dashboard (stats, reviews, performers, calendar), Staff Management (CRUD via admin-actions Edge Function), Task Management (create, toggle, review proposals), Assignments (assign, review photos), Rewards (approve, generate codes), Theme (colors, logo, app name).',
     code: `flowchart TD
     DASH["Admin Dashboard"] --> STATS["Stats Cards<br/>Staff / Tasks / Points"]
     DASH --> PENDING["Pending Reviews<br/>Photo submissions"]
@@ -874,25 +874,30 @@ const diagrams = [
   {
     id: 'superadmin',
     title: 'Super Admin Workflow',
-    desc: 'Platform-level management. Create and delete venues (cascade deletes all data). Assign and remove venue admins. Single-page dashboard — no nested layout or sub-routes.',
+    desc: 'Platform-level management. Create and delete venues (cascade deletes all data). Assign, unassign, and reassign venue admins. Venues must always have at least one admin. Single-page dashboard — no nested layout or sub-routes.',
     code: `flowchart LR
     SA["Super Admin<br/>Dashboard"] --> V["Venue<br/>Management"]
     SA --> A["Admin<br/>Management"]
     V --> V1["Create Venue<br/>Name + Address"]
     V --> V2["Delete Venue<br/>Cascades all data"]
     V --> V3["View All Venues<br/>with admin list"]
-    A --> A1["Assign Admin<br/>to Venue"]
-    A --> A2["Remove Admin<br/>from Venue"]
-    V1 --> AUTO["Auto-creates<br/>venue_settings"]`,
+    A --> A1["Invite Admin<br/>to Venue"]
+    A --> A2["Unassign Admin<br/>from Venue"]
+    A --> A3["Reassign Admin<br/>from Unassigned Pool"]
+    V1 --> AUTO["Auto-creates<br/>venue_settings"]
+    A2 --> POOL["Unassigned<br/>Admins Pool"]
+    POOL --> A3`,
     tooltips: {
       'SA': { title: 'Super Admin Dashboard', body: 'Single page at /superadmin. No sidebar or sub-routes. Header with logout button.' },
       'V': { title: 'Venue Management', body: 'CRUD operations on venues table. All venues visible regardless of ownership.' },
-      'A': { title: 'Admin Management', body: 'Assign or remove venue_admin profiles. Creates profile with role=venue_admin.' },
+      'A': { title: 'Admin Management', body: 'Invite, unassign, and reassign venue_admin profiles. Admins are never deleted — only moved between venues or unassigned.' },
       'V1': { title: 'Create Venue', body: 'Enter name + address. Slug auto-generated from name (e.g. "The Anchor" → "the-anchor").' },
       'V2': { title: 'Delete Venue', body: 'CASCADE deletes: all profiles (staff + admins), tasks, assignments, points_ledger, reward_redemptions, venue_settings.' },
       'V3': { title: 'View All Venues', body: 'List showing venue name, address, and assigned admins. Quick overview of platform.' },
-      'A1': { title: 'Assign Admin', body: 'Creates a new profile with role=venue_admin, linked to the selected venue. Admin uses email/password to login.' },
-      'A2': { title: 'Remove Admin', body: 'Deletes the admin\'s profile row. They can no longer log in to manage that venue.' },
+      'A1': { title: 'Invite Admin', body: 'Creates a new profile with role=venue_admin via Supabase invite email. Admin sets their own password.' },
+      'A2': { title: 'Unassign Admin', body: 'Sets venue_id to null. Admin moves to unassigned pool. Venue must keep at least one admin.' },
+      'A3': { title: 'Reassign Admin', body: 'From the unassigned pool, select a venue and assign the admin. Updates venue_id to the new venue.' },
+      'POOL': { title: 'Unassigned Admins Pool', body: 'Admins with no venue_id. They cannot access any venue until reassigned by a super admin.' },
       'AUTO': { title: 'Auto-Create Settings', body: 'Database trigger automatically creates a venue_settings row with default colors when a new venue is inserted.' },
     },
   },
@@ -994,7 +999,7 @@ const diagrams = [
   {
     id: 'architecture',
     title: 'Data Flow Architecture',
-    desc: 'React frontend communicates with Supabase via REST API (CRUD), Edge Functions (staff auth + creation), Realtime (live updates), and Storage (photos + assets). PostgreSQL enforces security via 27 RLS policies using helper functions. Two environments (DEV + PROD) controlled by VITE_ENV.',
+    desc: 'React frontend communicates with Supabase via REST API (CRUD), Edge Functions (staff auth + admin actions), Realtime (live updates), and Storage (photos + assets). PostgreSQL enforces security via 27 RLS policies using helper functions. Two environments (DEV + PROD) controlled by VITE_ENV.',
     code: `flowchart TD
     subgraph CLIENT["Frontend: React + Vite + TypeScript"]
         UI["React Components<br/>15 Pages + Layouts"]
@@ -1008,7 +1013,7 @@ const diagrams = [
 
     subgraph SUPA["Supabase Backend"]
         SB_AUTH["Supabase Auth<br/>email/password"]
-        EDGE["Edge Functions<br/>staff-auth + staff-create"]
+        EDGE["Edge Functions<br/>staff-auth + admin-actions"]
         DB[("PostgreSQL<br/>7 tables, 27 RLS policies")]
         TRIGGERS["DB Triggers<br/>3 auto-update triggers"]
         CRON["pg_cron<br/>nightly reset"]
@@ -1031,7 +1036,7 @@ const diagrams = [
       'VENUE': { title: 'VenueContext', body: 'Venue data and settings: colors, logo URL, app name. Applied as CSS custom properties.' },
       'ROUTER': { title: 'React Router v6', body: 'react-router-dom v7. RequireAuth wrapper checks role against allowedRoles. Redirects unauthorized users.' },
       'SB_AUTH': { title: 'Supabase Auth', body: 'Handles admin/super-admin login with email+password. Manages JWT sessions. Not used for staff (custom JWT instead).' },
-      'EDGE': { title: 'Edge Functions', body: 'Two functions: staff-auth (validates PIN, issues JWT) and staff-create (hashes PIN with bcrypt, creates profile).' },
+      'EDGE': { title: 'Edge Functions', body: 'Two functions: staff-auth (validates PIN, issues JWT) and admin-actions (staff CRUD, admin invite/unassign/assign, PIN reset).' },
       'DB': { title: 'PostgreSQL', body: '7 tables: venues, venue_settings, profiles, tasks, task_assignments, points_ledger, reward_redemptions. Protected by 27 RLS policies including 3 anonymous read policies for login pages.' },
       'TRIGGERS': { title: 'Database Triggers', body: '3 triggers: recalculate points_total on ledger insert, auto-create venue_settings on venue insert, update updated_at timestamps.' },
       'CRON': { title: 'pg_cron', body: 'Nightly job resets recurring task assignments. Creates new pending assignments for the next day.' },
@@ -1083,7 +1088,7 @@ const diagrams = [
       'L2': { title: '/staff-login', body: 'Staff PIN login. Multi-step: select venue → select profile → enter PIN.' },
       'L3': { title: '/superadmin/login', body: 'Super admin email + password login. Redirects to /superadmin on success.' },
       'GUARD': { title: 'RequireAuth', body: 'Checks session, profile, and role. Shows spinner while loading. Redirects if unauthorized.' },
-      'SA1': { title: '/superadmin', body: 'Super admin dashboard. Single page, no sub-routes. Venue and admin management.' },
+      'SA1': { title: '/superadmin', body: 'Super admin dashboard. Single page, no sub-routes. Venue management, admin invite/unassign/reassign.' },
       'A1': { title: '/admin/dashboard', body: 'Stats, pending reviews, top performers, weekly calendar. Real-time updates.' },
       'A2': { title: '/admin/users', body: 'Staff CRUD. Create, edit, reset PIN, delete. Table view.' },
       'A3': { title: '/admin/tasks', body: 'Task CRUD. Create, toggle active, review proposals. Table view.' },

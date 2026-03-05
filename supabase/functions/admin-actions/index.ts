@@ -11,9 +11,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function jsonResponse(data: unknown, status = 200) {
+function jsonResponse(data: unknown, _status = 200) {
+  // Always return 200 — supabase.functions.invoke() can't parse body on non-2xx.
+  // Errors are indicated via { error: "..." } in the response body.
   return new Response(JSON.stringify(data), {
-    status,
+    status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
@@ -408,9 +410,9 @@ serve(async (req) => {
         return jsonResponse({ success: true, message: 'Invite cancelled' });
       }
 
-      case 'delete-admin': {
+      case 'unassign-admin': {
         if (callerProfile.role !== 'super_admin') {
-          return jsonResponse({ error: 'Only super admins can delete venue admins' }, 403);
+          return jsonResponse({ error: 'Only super admins can unassign venue admins' }, 403);
         }
 
         const { admin_id } = params;
@@ -418,10 +420,64 @@ serve(async (req) => {
           return jsonResponse({ error: 'Missing admin_id' }, 400);
         }
 
+        // Verify target is a venue_admin with a venue
+        const { data: targetProfile } = await adminClient
+          .from('profiles')
+          .select('id, role, venue_id, email, display_name')
+          .eq('id', admin_id)
+          .single();
+
+        if (!targetProfile) {
+          return jsonResponse({ error: 'Admin not found' }, 404);
+        }
+        if (targetProfile.role !== 'venue_admin') {
+          return jsonResponse({ error: 'Target is not a venue admin' }, 400);
+        }
+        if (!targetProfile.venue_id) {
+          return jsonResponse({ error: 'Admin is already unassigned' }, 400);
+        }
+
+        // Ensure venue keeps at least 1 admin
+        const { count } = await adminClient
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('venue_id', targetProfile.venue_id)
+          .eq('role', 'venue_admin');
+
+        if ((count ?? 0) <= 1) {
+          return jsonResponse({ error: 'Cannot unassign — venue must have at least one admin' }, 400);
+        }
+
+        // Unassign: set venue_id to null
+        const { error: updateErr } = await adminClient
+          .from('profiles')
+          .update({ venue_id: null })
+          .eq('id', admin_id);
+
+        if (updateErr) {
+          return jsonResponse({ error: `Unassign failed: ${updateErr.message}` }, 500);
+        }
+
+        return jsonResponse({
+          success: true,
+          message: `Admin "${targetProfile.display_name || targetProfile.email}" unassigned`,
+        });
+      }
+
+      case 'assign-admin': {
+        if (callerProfile.role !== 'super_admin') {
+          return jsonResponse({ error: 'Only super admins can assign venue admins' }, 403);
+        }
+
+        const { admin_id, venue_id } = params;
+        if (!admin_id || !venue_id) {
+          return jsonResponse({ error: 'Missing admin_id or venue_id' }, 400);
+        }
+
         // Verify target is a venue_admin
         const { data: targetProfile } = await adminClient
           .from('profiles')
-          .select('id, role, email, display_name')
+          .select('id, role, display_name, email')
           .eq('id', admin_id)
           .single();
 
@@ -432,25 +488,19 @@ serve(async (req) => {
           return jsonResponse({ error: 'Target is not a venue admin' }, 400);
         }
 
-        // Clean up all FK references before deleting
-        // SET NULL for admin-authored references (tasks stay, just lose their creator ref)
-        await adminClient.from('tasks').update({ created_by: callerProfile.id }).eq('created_by', admin_id);
-        await adminClient.from('tasks').update({ proposed_by: null }).eq('proposed_by', admin_id);
-        await adminClient.from('task_assignments').update({ assigned_by: callerProfile.id }).eq('assigned_by', admin_id);
-        await adminClient.from('task_assignments').update({ assigned_to: null }).eq('assigned_to', admin_id);
-        await adminClient.from('points_ledger').update({ created_by: callerProfile.id }).eq('created_by', admin_id);
-        await adminClient.from('reward_redemptions').update({ approved_by: null }).eq('approved_by', admin_id);
+        // Assign to venue
+        const { error: updateErr } = await adminClient
+          .from('profiles')
+          .update({ venue_id })
+          .eq('id', admin_id);
 
-        // Delete profile then auth user
-        const { error: delErr } = await adminClient.from('profiles').delete().eq('id', admin_id);
-        if (delErr) {
-          return jsonResponse({ error: `Delete failed: ${delErr.message}` }, 500);
+        if (updateErr) {
+          return jsonResponse({ error: `Assign failed: ${updateErr.message}` }, 500);
         }
-        await adminClient.auth.admin.deleteUser(admin_id as string).catch(() => {});
 
         return jsonResponse({
           success: true,
-          message: `Admin "${targetProfile.display_name || targetProfile.email}" deleted`,
+          message: `Admin "${targetProfile.display_name || targetProfile.email}" assigned to venue`,
         });
       }
 

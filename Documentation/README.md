@@ -18,7 +18,7 @@ A multi-venue, mobile-first web app that turns bar staff chores into a points-ba
 
 | Side | Route | Who | Purpose |
 |------|-------|-----|---------|
-| Super Admin | `/superadmin` | Developer only | Create venues, assign first admins, monitor all venues |
+| Super Admin | `/superadmin` | Developer only | Create venues, assign/unassign admins, monitor all venues |
 | Admin Panel | `/admin` | Venue Admin | Manage staff, tasks, points, rewards, branding |
 | Staff App | `/staff` | Bar staff | Complete tasks, earn points, leaderboard, rewards |
 
@@ -44,7 +44,10 @@ A multi-venue, mobile-first web app that turns bar staff chores into a points-ba
 - Logs in at `/superadmin` with email + password
 - Can create new venues (name, address, slug)
 - Can create the first Venue Admin per venue (triggers Supabase invite email)
+- Can unassign admins from venues (admin moves to an "unassigned" pool, not deleted)
+- Can reassign unassigned admins to any venue
 - Can view all venues and their activity status
+- A venue must always have at least one admin — the last admin cannot be unassigned
 - **Cannot** manage tasks, staff, points, or rewards inside any venue
 
 ### Venue Admin
@@ -192,6 +195,11 @@ A multi-venue, mobile-first web app that turns bar staff chores into a points-ba
 
 The existing "Add Admin" (instant password) flow is still available as an alternative.
 
+### How Super Admin Unassigns / Reassigns Admins
+- **Unassign:** Super Admin clicks "Unassign" on an admin → their `venue_id` is set to `null` → they appear in an "Unassigned Admins" pool. The venue must keep at least one admin.
+- **Reassign:** From the unassigned pool, Super Admin selects a venue from a dropdown and clicks "Assign" → the admin's `venue_id` is updated to the selected venue.
+- Admins are never deleted — they are only moved between venues or to the unassigned pool.
+
 ### How Venue Admins Create Additional Admins
 1. Venue Admin goes to `/admin/users`
 2. Clicks "Invite Admin" → enters name and email
@@ -318,7 +326,8 @@ Avatars also appear on: staff dashboard header, live activity feed, admin user m
 - [x] 7 tables created with schema above
 - [x] RLS enabled on all tables with 27 venue-scoped policies (including 3 anonymous read policies for login pages)
 - [x] Storage buckets: `task-photos` (private), `venue-assets` (public), `profile-pictures` (public)
-- [x] Edge Function for staff PIN → magic link authentication
+- [x] Edge Function: `staff-auth` for staff PIN → magic link authentication
+- [x] Edge Function: `admin-actions` for staff CRUD, admin invite/unassign/assign, PIN reset
 - [x] pg_cron: nightly midnight reset of recurring task assignments
 - [x] Postgres trigger: update `profiles.points_total` on `points_ledger` insert (clamped to minimum 0)
 - [x] Postgres trigger: create default `venue_settings` on new venue insert
@@ -384,8 +393,10 @@ bar-chores-app/
 │   └── main.tsx
 ├── supabase/
 │   └── functions/
-│       └── staff-auth/
-│           └── index.ts        ← PIN → magic link Edge Function
+│       ├── staff-auth/
+│       │   └── index.ts        ← PIN → magic link Edge Function
+│       └── admin-actions/
+│           └── index.ts        ← staff CRUD, admin invite/unassign/assign
 ├── .env.production              ← prod credentials (gitignored)
 ├── .env.development             ← dev credentials (gitignored)
 ├── .env.example                 ← template with empty values (committed)
