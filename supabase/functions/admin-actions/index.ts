@@ -265,6 +265,13 @@ serve(async (req) => {
         const origin = req.headers.get('origin') || 'https://bar-chores-app.vercel.app';
         const redirectTo = `${origin}/auth/callback`;
 
+        // Check if a profile already exists for this email (e.g. from create-admin flow)
+        const { data: existingProfile } = await adminClient
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+
         // Send invite email via Supabase Auth admin API
         const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
           email as string,
@@ -281,8 +288,26 @@ serve(async (req) => {
           return jsonResponse({ error: 'No user returned from invite' }, 500);
         }
 
-        // Create profile row with pending status
-        const { error: profileErr } = await adminClient.from('profiles').insert({
+        if (existingProfile && existingProfile.id !== inviteData.user.id) {
+          // Profile exists with different ID — migrate FK references and update profile ID
+          const oldId = existingProfile.id;
+          const newId = inviteData.user.id;
+          await adminClient.from('tasks').update({ created_by: newId }).eq('created_by', oldId);
+          await adminClient.from('tasks').update({ proposed_by: newId }).eq('proposed_by', oldId);
+          await adminClient.from('task_assignments').update({ assigned_by: newId }).eq('assigned_by', oldId);
+          await adminClient.from('task_assignments').update({ assigned_to: newId }).eq('assigned_to', oldId);
+          await adminClient.from('points_ledger').update({ created_by: newId }).eq('created_by', oldId);
+          await adminClient.from('points_ledger').update({ profile_id: newId }).eq('profile_id', oldId);
+          await adminClient.from('reward_redemptions').update({ approved_by: newId }).eq('approved_by', oldId);
+          await adminClient.from('reward_redemptions').update({ profile_id: newId }).eq('profile_id', oldId);
+          // Delete old profile, create new one with correct ID
+          await adminClient.from('profiles').delete().eq('id', oldId);
+          // Delete orphaned auth user if it exists
+          await adminClient.auth.admin.deleteUser(oldId).catch(() => {});
+        }
+
+        // Create or upsert profile row with pending status
+        const { error: profileErr } = await adminClient.from('profiles').upsert({
           id: inviteData.user.id,
           venue_id,
           role: 'venue_admin',
@@ -381,6 +406,52 @@ serve(async (req) => {
         await adminClient.auth.admin.deleteUser(user_id as string).catch(() => {});
 
         return jsonResponse({ success: true, message: 'Invite cancelled' });
+      }
+
+      case 'delete-admin': {
+        if (callerProfile.role !== 'super_admin') {
+          return jsonResponse({ error: 'Only super admins can delete venue admins' }, 403);
+        }
+
+        const { admin_id } = params;
+        if (!admin_id) {
+          return jsonResponse({ error: 'Missing admin_id' }, 400);
+        }
+
+        // Verify target is a venue_admin
+        const { data: targetProfile } = await adminClient
+          .from('profiles')
+          .select('id, role, email, display_name')
+          .eq('id', admin_id)
+          .single();
+
+        if (!targetProfile) {
+          return jsonResponse({ error: 'Admin not found' }, 404);
+        }
+        if (targetProfile.role !== 'venue_admin') {
+          return jsonResponse({ error: 'Target is not a venue admin' }, 400);
+        }
+
+        // Clean up all FK references before deleting
+        // SET NULL for admin-authored references (tasks stay, just lose their creator ref)
+        await adminClient.from('tasks').update({ created_by: callerProfile.id }).eq('created_by', admin_id);
+        await adminClient.from('tasks').update({ proposed_by: null }).eq('proposed_by', admin_id);
+        await adminClient.from('task_assignments').update({ assigned_by: callerProfile.id }).eq('assigned_by', admin_id);
+        await adminClient.from('task_assignments').update({ assigned_to: null }).eq('assigned_to', admin_id);
+        await adminClient.from('points_ledger').update({ created_by: callerProfile.id }).eq('created_by', admin_id);
+        await adminClient.from('reward_redemptions').update({ approved_by: null }).eq('approved_by', admin_id);
+
+        // Delete profile then auth user
+        const { error: delErr } = await adminClient.from('profiles').delete().eq('id', admin_id);
+        if (delErr) {
+          return jsonResponse({ error: `Delete failed: ${delErr.message}` }, 500);
+        }
+        await adminClient.auth.admin.deleteUser(admin_id as string).catch(() => {});
+
+        return jsonResponse({
+          success: true,
+          message: `Admin "${targetProfile.display_name || targetProfile.email}" deleted`,
+        });
       }
 
       default:
