@@ -4,7 +4,7 @@ test.describe('Create Staff', () => {
   test('admin creates a new staff user who appears in the users list', async ({ page }) => {
     // Login as admin first
     await page.goto('/login');
-    await expect(page.locator('h1')).toHaveText('Admin Login', { timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Admin Login' })).toBeVisible({ timeout: 30000 });
 
     await page.locator('input[type="email"]').fill('brian@rekom.dk');
     await page.locator('input[type="password"]').fill('Admin1234!');
@@ -13,7 +13,7 @@ test.describe('Create Staff', () => {
 
     // Navigate to users page
     await page.goto('/admin/users');
-    await expect(page.locator('h1')).toHaveText('User Management', { timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible({ timeout: 15000 });
 
     // Click "Add Staff" button
     const addButton = page.locator('button').filter({ hasText: /Add Staff/ });
@@ -28,11 +28,11 @@ test.describe('Create Staff', () => {
     await page.locator('input[placeholder="jake_b"]').fill(uniqueUsername);
     await page.locator('input[placeholder="1234"]').fill('9876');
 
-    // Submit the form — the Create button
+    // Submit the form
     const createBtn = page.locator('button').filter({ hasText: 'Create' });
     await createBtn.click();
 
     // Verify the new staff member appears in the list
-    await expect(page.locator(`text=${uniqueName}`)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(uniqueName)).toBeVisible({ timeout: 15000 });
   });
 });

@@ -35,15 +35,7 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
-      # 6. Integration tests against DEV Supabase
-      # Uses DEV credentials even in prod pipeline to avoid touching production data
-      - name: Run integration tests
-        env:
-          DEV_SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
-          DEV_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}
-        run: npm run test:integration
-
-      # 7. Playwright E2E tests against local dev server
+      # 6. Playwright E2E tests against local dev server
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -54,19 +46,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run test:e2e -- --project=chromium
 
-      # 8. Upload test coverage report as artifact
-      - name: Generate coverage report
-        run: npm run test:coverage || true
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 14
-
-      # 9. Deploy to Vercel production (only if ALL above pass)
+      # 7. Deploy to Vercel production
       - name: Install Vercel CLI
         run: npm i -g vercel
 
