@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import EmojiPicker from '../../components/shared/EmojiPicker';
 import type { RewardTypeRow } from '../../types/database';
 
 interface RewardRow {
@@ -68,14 +69,16 @@ export default function AdminRewards() {
     e.preventDefault();
     if (!venueId) return;
     if (editingType) {
-      await supabase.from('reward_types').update({
+      const { error } = await supabase.from('reward_types').update({
         name: typeName, emoji: typeEmoji, points_required: typePoints,
       }).eq('id', editingType.id);
+      if (error) { setMessage(`Error updating: ${error.message}`); return; }
       setMessage(`Updated "${typeName}"`);
     } else {
-      await supabase.from('reward_types').insert({
+      const { error } = await supabase.from('reward_types').insert({
         venue_id: venueId, name: typeName, emoji: typeEmoji, points_required: typePoints,
       });
+      if (error) { setMessage(`Error creating: ${error.message}`); return; }
       setMessage(`Created "${typeName}"`);
     }
     setShowTypeForm(false); setEditingType(null);
@@ -172,8 +175,7 @@ export default function AdminRewards() {
               </div>
               <div>
                 <label className="block text-sm text-slate-300 mb-1">Emoji</label>
-                <input value={typeEmoji} onChange={e => setTypeEmoji(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary" placeholder="👕" />
+                <EmojiPicker value={typeEmoji} onChange={setTypeEmoji} />
               </div>
               <div>
                 <label className="block text-sm text-slate-300 mb-1">Points *</label>
