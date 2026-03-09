@@ -47,6 +47,19 @@ All data is scoped correctly — each venue has its own admin, staff, and tasks.
 
 ---
 
+## 🎁 Reward Types (per venue)
+
+Each venue gets the same 4 default reward types:
+
+| Name | Emoji | Points Required |
+|------|-------|----------------|
+| Drink Ticket | 🍺 | 100 |
+| Tote Bag | 👜 | 500 |
+| Bottle Ticket | 🍾 | 1,000 |
+| Hoodie | 👕 | 2,000 |
+
+---
+
 ## 📋 Tasks
 
 ### Little Green Door — 20 Tasks
@@ -142,6 +155,7 @@ Or ask Claude Code to reset and reseed. The script will:
 | venues | 2 |
 | venue_settings | 2 (auto-created by trigger) |
 | profiles | 13 (1 super admin + 2 admins + 10 staff) |
+| reward_types | 8 (4 per venue) |
 | tasks | 40 |
 | task_assignments | 10 (1 per staff member) |
 | points_ledger | 0 (clean start) |

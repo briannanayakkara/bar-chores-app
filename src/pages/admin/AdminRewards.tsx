@@ -1,21 +1,25 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import type { RewardTypeRow } from '../../types/database';
 
 interface RewardRow {
   id: string;
-  reward_type: string;
+  reward_type: string | null;
+  reward_type_id: string | null;
   points_spent: number;
+  points_reserved: number;
   quantity: number;
   status: string;
   redemption_code: string;
   used_at: string | null;
   created_at: string;
   redeemer: { display_name: string | null; username: string | null } | null;
+  reward_type_info: { name: string; emoji: string } | null;
 }
 
-function generateCode(type: string) {
-  const prefix = type === 'drink_ticket' ? 'DRK' : 'BTL';
+function generateCode(typeName: string) {
+  const prefix = typeName.replace(/[^A-Z]/gi, '').slice(0, 3).toUpperCase() || 'RWD';
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
@@ -28,39 +32,89 @@ export default function AdminRewards() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
   const [message, setMessage] = useState('');
+  const [rewardTypes, setRewardTypes] = useState<RewardTypeRow[]>([]);
+  const [showTypeForm, setShowTypeForm] = useState(false);
+  const [editingType, setEditingType] = useState<RewardTypeRow | null>(null);
+  const [typeName, setTypeName] = useState('');
+  const [typeEmoji, setTypeEmoji] = useState('');
+  const [typePoints, setTypePoints] = useState(0);
 
   const venueId = profile?.venue_id;
+
+  async function loadRewardTypes() {
+    if (!venueId) return;
+    const { data } = await supabase
+      .from('reward_types')
+      .select('*')
+      .eq('venue_id', venueId)
+      .order('points_required');
+    if (data) setRewardTypes(data as RewardTypeRow[]);
+  }
 
   async function loadRewards() {
     if (!venueId) { setLoading(false); return; }
     const { data } = await supabase
       .from('reward_redemptions')
-      .select('*, redeemer:profiles!reward_redemptions_profile_id_fkey(display_name, username)')
+      .select('*, redeemer:profiles!reward_redemptions_profile_id_fkey(display_name, username), reward_type_info:reward_types(name, emoji)')
       .eq('venue_id', venueId)
       .order('created_at', { ascending: false });
     if (data) setRewards(data as unknown as RewardRow[]);
     setLoading(false);
   }
 
-  useEffect(() => { loadRewards(); }, [venueId]);
+  useEffect(() => { loadRewards(); loadRewardTypes(); }, [venueId]);
+
+  async function handleSaveType(e: React.FormEvent) {
+    e.preventDefault();
+    if (!venueId) return;
+    if (editingType) {
+      await supabase.from('reward_types').update({
+        name: typeName, emoji: typeEmoji, points_required: typePoints,
+      }).eq('id', editingType.id);
+      setMessage(`Updated "${typeName}"`);
+    } else {
+      await supabase.from('reward_types').insert({
+        venue_id: venueId, name: typeName, emoji: typeEmoji, points_required: typePoints,
+      });
+      setMessage(`Created "${typeName}"`);
+    }
+    setShowTypeForm(false); setEditingType(null);
+    setTypeName(''); setTypeEmoji(''); setTypePoints(0);
+    loadRewardTypes();
+  }
+
+  async function toggleTypeActive(type: RewardTypeRow) {
+    await supabase.from('reward_types').update({ is_active: !type.is_active }).eq('id', type.id);
+    loadRewardTypes();
+  }
+
+  async function deleteType(type: RewardTypeRow) {
+    if (!confirm(`Delete "${type.name}"?`)) return;
+    const { error: err } = await supabase.from('reward_types').delete().eq('id', type.id);
+    if (err) { setMessage(`Cannot delete: ${err.message}`); return; }
+    setMessage(`Deleted "${type.name}"`); loadRewardTypes();
+  }
 
   async function handleApprove(reward: RewardRow) {
     if (!profile || !venueId) return;
-    const code = generateCode(reward.reward_type);
+    const typeName = reward.reward_type_info?.name || reward.reward_type || 'Reward';
+    const code = generateCode(typeName);
     await supabase.from('reward_redemptions').update({
       status: 'approved',
       redemption_code: code,
       approved_by: profile.id,
+      resolved_at: new Date().toISOString(),
+      resolved_by: profile.id,
     }).eq('id', reward.id);
 
-    // Deduct points
-    const { data: fullReward } = await supabase.from('reward_redemptions').select('profile_id').eq('id', reward.id).single();
+    const { data: fullReward } = await supabase.from('reward_redemptions').select('profile_id, points_reserved').eq('id', reward.id).single();
     if (fullReward) {
+      const pointsToDeduct = fullReward.points_reserved || reward.points_spent;
       await supabase.from('points_ledger').insert({
         profile_id: fullReward.profile_id,
         venue_id: venueId,
-        delta: -reward.points_spent,
-        reason: `Redeemed: ${reward.reward_type === 'drink_ticket' ? 'Drink' : 'Bottle'} Ticket x${reward.quantity}`,
+        delta: -pointsToDeduct,
+        reason: `Redeemed: ${typeName} x${reward.quantity}`,
         created_by: profile.id,
       });
     }
@@ -70,8 +124,13 @@ export default function AdminRewards() {
   }
 
   async function handleReject(reward: RewardRow) {
-    await supabase.from('reward_redemptions').update({ status: 'rejected' }).eq('id', reward.id);
-    setMessage('Rejected.');
+    if (!profile) return;
+    await supabase.from('reward_redemptions').update({
+      status: 'rejected',
+      resolved_at: new Date().toISOString(),
+      resolved_by: profile.id,
+    }).eq('id', reward.id);
+    setMessage('Rejected — points released.');
     loadRewards();
   }
 
@@ -93,6 +152,71 @@ export default function AdminRewards() {
         </div>
       )}
 
+      {/* Reward Types Management */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Reward Types</h2>
+          <button onClick={() => { setShowTypeForm(true); setEditingType(null); setTypeName(''); setTypeEmoji(''); setTypePoints(0); }}
+            className="px-3 py-1.5 text-sm bg-primary text-slate-900 rounded-lg hover:bg-primary/90 min-h-[36px]">
+            + Add Type
+          </button>
+        </div>
+
+        {showTypeForm && (
+          <form onSubmit={handleSaveType} className="bg-slate-700/50 rounded-lg p-4 mb-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Name *</label>
+                <input value={typeName} onChange={e => setTypeName(e.target.value)} required
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary" placeholder="Hoodie" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Emoji</label>
+                <input value={typeEmoji} onChange={e => setTypeEmoji(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary" placeholder="👕" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Points *</label>
+                <input type="number" value={typePoints} onChange={e => setTypePoints(Number(e.target.value))} min={1} required
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button type="submit" className="px-4 py-2 bg-primary text-slate-900 text-sm rounded-lg min-h-[36px]">
+                {editingType ? 'Update' : 'Create'}
+              </button>
+              <button type="button" onClick={() => setShowTypeForm(false)} className="px-4 py-2 text-slate-300 border border-slate-600 text-sm rounded-lg min-h-[36px]">Cancel</button>
+            </div>
+          </form>
+        )}
+
+        {rewardTypes.length === 0 ? (
+          <p className="text-slate-500 text-sm">No reward types configured.</p>
+        ) : (
+          <div className="space-y-2">
+            {rewardTypes.map(type => (
+              <div key={type.id} className={`flex items-center justify-between py-2 border-b border-slate-700/50 last:border-0 ${!type.is_active ? 'opacity-50' : ''}`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{type.emoji}</span>
+                  <div>
+                    <p className="text-white text-sm font-medium">{type.name}</p>
+                    <p className="text-xs text-accent">{type.points_required} pts</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setEditingType(type); setTypeName(type.name); setTypeEmoji(type.emoji); setTypePoints(type.points_required); setShowTypeForm(true); }}
+                    className="text-xs text-accent hover:text-primary">Edit</button>
+                  <button onClick={() => toggleTypeActive(type)}
+                    className="text-xs text-yellow-400 hover:text-yellow-300">{type.is_active ? 'Disable' : 'Enable'}</button>
+                  <button onClick={() => deleteType(type)}
+                    className="text-xs text-red-400 hover:text-red-300">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="flex gap-2 mb-4">
         {['pending', 'approved', 'rejected', 'all'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
@@ -113,9 +237,9 @@ export default function AdminRewards() {
               <div key={r.id} className="p-4 flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{r.reward_type === 'drink_ticket' ? '🍺' : '🍾'}</span>
+                    <span className="text-lg">{r.reward_type_info?.emoji || (r.reward_type === 'drink_ticket' ? '🍺' : '🍾')}</span>
                     <p className="text-white font-medium">
-                      {r.reward_type === 'drink_ticket' ? 'Drink' : 'Bottle'} Ticket x{r.quantity}
+                      {r.reward_type_info?.name || (r.reward_type === 'drink_ticket' ? 'Drink' : 'Bottle')} Ticket x{r.quantity}
                     </p>
                   </div>
                   <p className="text-sm text-slate-400">
