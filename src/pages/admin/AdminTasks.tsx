@@ -173,8 +173,8 @@ export default function AdminTasks() {
             {proposedTasks.map(task => {
               const isRejected = task.approval_status === 'rejected';
               return (
-                <div key={task.id} className={`rounded-lg p-4 flex items-start justify-between gap-4 ${isRejected ? 'bg-red-500/10 border border-red-500/20' : 'bg-slate-700/50'}`}>
-                  <div className="flex-1 min-w-0">
+                <div key={task.id} className={`rounded-lg p-4 ${isRejected ? 'bg-red-500/10 border border-red-500/20' : 'bg-slate-700/50'}`}>
+                  <div className="flex-1 min-w-0 mb-3">
                     <div className="flex items-center gap-2">
                       <p className="text-white font-medium">{task.title}</p>
                       {isRejected && <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">Rejected</span>}
@@ -184,10 +184,9 @@ export default function AdminTasks() {
                       Proposed by {(task as any).proposer?.display_name || 'Unknown'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input
-                      type="number"
-                      min={1}
+                      type="number" min={1}
                       value={approvePoints[task.id] ?? ''}
                       onChange={e => setApprovePoints(prev => ({ ...prev, [task.id]: Number(e.target.value) }))}
                       className="w-20 px-3 py-2 bg-slate-600 border border-slate-500 rounded-lg text-white text-sm focus:outline-none focus:border-primary"
@@ -207,7 +206,7 @@ export default function AdminTasks() {
         </div>
       )}
 
-      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden overflow-x-auto">
         {loading ? (
           <div className="p-6 text-slate-400 text-center">Loading...</div>
         ) : tasks.length === 0 ? (
@@ -216,33 +215,35 @@ export default function AdminTasks() {
           <table className="w-full">
             <thead>
               <tr className="text-left text-sm text-slate-400 border-b border-slate-700">
-                <th className="px-6 py-3">Task</th>
-                <th className="px-6 py-3">Points</th>
-                <th className="px-6 py-3">Photo</th>
-                <th className="px-6 py-3">Recurring</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Actions</th>
+                <th className="px-3 md:px-6 py-3">Task</th>
+                <th className="px-3 md:px-6 py-3">Points</th>
+                <th className="px-3 md:px-6 py-3 hidden sm:table-cell">Photo</th>
+                <th className="px-3 md:px-6 py-3 hidden sm:table-cell">Recurring</th>
+                <th className="px-3 md:px-6 py-3">Status</th>
+                <th className="px-3 md:px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {tasks.map(task => (
                 <tr key={task.id} className={`border-b border-slate-700/50 hover:bg-slate-750/50 ${!task.is_active ? 'opacity-50' : ''}`}>
-                  <td className="px-6 py-4">
+                  <td className="px-3 md:px-6 py-4">
                     <p className="text-white font-medium">{task.title}</p>
-                    {task.description && <p className="text-xs text-slate-400 mt-1">{task.description}</p>}
+                    {task.description && <p className="text-xs text-slate-400 mt-1 max-w-[200px] truncate">{task.description}</p>}
                   </td>
-                  <td className="px-6 py-4 text-accent font-medium">{task.points}</td>
-                  <td className="px-6 py-4 text-slate-400">{task.requires_photo ? 'Yes' : 'No'}</td>
-                  <td className="px-6 py-4 text-slate-400">{task.is_recurring ? 'Daily' : 'One-time'}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 md:px-6 py-4 text-accent font-medium">{task.points}</td>
+                  <td className="px-3 md:px-6 py-4 text-slate-400 hidden sm:table-cell">{task.requires_photo ? 'Yes' : 'No'}</td>
+                  <td className="px-3 md:px-6 py-4 text-slate-400 hidden sm:table-cell">{task.is_recurring ? 'Daily' : 'One-time'}</td>
+                  <td className="px-3 md:px-6 py-4">
                     <span className={`text-xs px-2 py-1 rounded-full ${task.is_active ? 'bg-green-500/20 text-green-400' : 'bg-slate-600/20 text-slate-400'}`}>
                       {task.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 flex gap-3">
-                    <button onClick={() => openEdit(task)} className="text-sm text-accent hover:text-primary">Edit</button>
-                    <button onClick={() => toggleActive(task)} className="text-sm text-yellow-400 hover:text-yellow-300">{task.is_active ? 'Disable' : 'Enable'}</button>
-                    <button onClick={() => handleDelete(task)} className="text-sm text-red-400 hover:text-red-300">Delete</button>
+                  <td className="px-3 md:px-6 py-4">
+                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-3">
+                      <button onClick={() => openEdit(task)} className="text-sm text-accent hover:text-primary">Edit</button>
+                      <button onClick={() => toggleActive(task)} className="text-sm text-yellow-400 hover:text-yellow-300">{task.is_active ? 'Disable' : 'Enable'}</button>
+                      <button onClick={() => handleDelete(task)} className="text-sm text-red-400 hover:text-red-300">Delete</button>
+                    </div>
                   </td>
                 </tr>
               ))}
