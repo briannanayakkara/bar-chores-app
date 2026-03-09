@@ -5,7 +5,7 @@
 - File naming: NNN_descriptive_name.sql (zero-padded 3-digit prefix)
 - One logical concern per file (schema, RLS, triggers, cron)
 - Section dividers: `-- ============` with descriptive comments
-- Next migration number: 006
+- Next migration number: 007
 
 ## RLS Patterns
 
