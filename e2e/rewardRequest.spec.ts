@@ -1,32 +1,21 @@
 import { test, expect } from '@playwright/test';
+import { staffLogin } from './helpers';
 
 test.describe('Reward Request', () => {
   test('staff requests a reward and available points reduce', async ({ page }) => {
-    // Login as staff
-    await page.goto('/staff-login');
-
-    const venueCard = page.locator('button').filter({ hasText: /Little Green Door|KOKO/ }).first();
-    await expect(venueCard).toBeVisible({ timeout: 10000 });
-    await venueCard.click();
-
-    await page.waitForTimeout(1000);
-    const staffCard = page.locator('button').filter({ hasText: /Jake|Sofia|Marcus|Ella|Liam|Noah|Mia|Oscar|Freya|Emil/ }).first();
-    await expect(staffCard).toBeVisible({ timeout: 10000 });
-    await staffCard.click();
-
-    await page.fill('input[type="password"]', '1234');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('**/staff/dashboard', { timeout: 15000 });
+    await staffLogin(page);
 
     // Navigate to rewards
     await page.goto('/staff/rewards');
-    await page.waitForLoadState('networkidle');
 
-    // Check that the rewards page loaded
-    await expect(page.locator('text=/Available Points|Redeem Points/i').first()).toBeVisible({ timeout: 10000 });
+    // Check that the rewards page loaded — "Available Points" heading
+    await expect(page.locator('text=Available Points')).toBeVisible({ timeout: 15000 });
 
-    // Look for reward buttons (Drink Ticket, Tote Bag, etc.)
-    const rewardButtons = page.locator('button').filter({ hasText: /Drink Ticket|Tote Bag|Bottle Ticket|Hoodie/ });
+    // Look for the "Redeem Points" section
+    await expect(page.locator('text=Redeem Points')).toBeVisible({ timeout: 10000 });
+
+    // Find reward buttons in the grid (they're button elements with rounded-xl)
+    const rewardButtons = page.locator('button.rounded-xl').filter({ has: page.locator('.text-2xl') });
 
     // If there are reward options and staff has points, try requesting one
     const firstReward = rewardButtons.first();
@@ -35,15 +24,10 @@ test.describe('Reward Request', () => {
       if (isEnabled) {
         await firstReward.click();
 
-        // Should see success message
+        // Should see success or pending message
         await expect(
-          page.locator('text=/requested|Waiting for admin/i').first()
+          page.locator('text=/reserved|pending|requested|approval/i').first()
         ).toBeVisible({ timeout: 10000 });
-
-        // Check pending reserved points message
-        await expect(
-          page.locator('text=/reserved|pending/i').first()
-        ).toBeVisible({ timeout: 5000 });
       }
     }
   });

@@ -4,12 +4,16 @@ test.describe('Admin Login', () => {
   test('admin logs in with email and password and reaches the dashboard', async ({ page }) => {
     await page.goto('/login');
 
+    // Wait for the login page to fully render
+    await expect(page.locator('h1')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('h1')).toHaveText('Admin Login');
+
     // Fill in email and password
-    await page.fill('input[type="email"]', 'brian@rekom.dk');
-    await page.fill('input[type="password"]', 'Admin1234!');
+    await page.locator('input[type="email"]').fill('brian@rekom.dk');
+    await page.locator('input[type="password"]').fill('Admin1234!');
 
     // Click sign in button
-    await page.click('button[type="submit"]');
+    await page.locator('button[type="submit"]').click();
 
     // Wait for navigation to dashboard
     await page.waitForURL('**/admin/dashboard', { timeout: 15000 });
@@ -17,7 +21,7 @@ test.describe('Admin Login', () => {
     // Verify we're on the dashboard
     await expect(page).toHaveURL(/\/admin\/dashboard/);
 
-    // Dashboard content should be visible
-    await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
+    // Dashboard heading should be visible
+    await expect(page.locator('h1')).toHaveText('Dashboard', { timeout: 10000 });
   });
 });
