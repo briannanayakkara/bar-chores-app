@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import type { Task } from '../../types/database';
+import type { Task, TaskFrequency } from '../../types/database';
 
 export default function AdminTasks() {
   const { profile } = useAuth();
@@ -14,7 +14,7 @@ export default function AdminTasks() {
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(0);
   const [requiresPhoto, setRequiresPhoto] = useState(false);
-  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<TaskFrequency>('once');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -44,14 +44,14 @@ export default function AdminTasks() {
 
   function openCreate() {
     setEditingTask(null);
-    setTitle(''); setDescription(''); setPoints(0); setRequiresPhoto(false); setIsRecurring(false);
+    setTitle(''); setDescription(''); setPoints(0); setRequiresPhoto(false); setFrequency('once');
     setShowForm(true); setError('');
   }
 
   function openEdit(task: Task) {
     setEditingTask(task);
     setTitle(task.title); setDescription(task.description || ''); setPoints(task.points);
-    setRequiresPhoto(task.requires_photo); setIsRecurring(task.is_recurring);
+    setRequiresPhoto(task.requires_photo); setFrequency(task.frequency);
     setShowForm(true); setError('');
   }
 
@@ -64,14 +64,14 @@ export default function AdminTasks() {
 
     if (editingTask) {
       const { error: err } = await supabase.from('tasks').update({
-        title, description: description || null, points, requires_photo: autoPhoto, is_recurring: isRecurring,
+        title, description: description || null, points, requires_photo: autoPhoto, frequency,
       }).eq('id', editingTask.id);
       if (err) { setError(err.message); setSaving(false); return; }
       setMessage(`Updated "${title}"`);
     } else {
       const { error: err } = await supabase.from('tasks').insert({
         venue_id: venueId, title, description: description || null, points,
-        requires_photo: autoPhoto, is_recurring: isRecurring, created_by: profile.id,
+        requires_photo: autoPhoto, frequency, created_by: profile.id,
       });
       if (err) { setError(err.message); setSaving(false); return; }
       setMessage(`Created "${title}"`);
@@ -150,11 +150,16 @@ export default function AdminTasks() {
                 className="w-5 h-5 rounded bg-slate-700 border-slate-600" />
               Requires Photo {points >= 500 && <span className="text-xs text-yellow-400">(auto: 500+ pts)</span>}
             </label>
-            <label className="flex items-center gap-3 text-slate-300 cursor-pointer min-h-[48px]">
-              <input type="checkbox" checked={isRecurring} onChange={e => setIsRecurring(e.target.checked)}
-                className="w-5 h-5 rounded bg-slate-700 border-slate-600" />
-              Daily Recurring
-            </label>
+            <div>
+              <label className="block text-sm text-slate-300 mb-1">Frequency</label>
+              <select value={frequency} onChange={e => setFrequency(e.target.value as TaskFrequency)}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary">
+                <option value="once">One-time</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
           </div>
           <div className="flex gap-3">
             <button type="submit" disabled={saving} className="px-6 py-2.5 bg-primary text-slate-900 font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 min-h-[48px]">
@@ -218,7 +223,7 @@ export default function AdminTasks() {
                 <th className="px-3 md:px-6 py-3">Task</th>
                 <th className="px-3 md:px-6 py-3">Points</th>
                 <th className="px-3 md:px-6 py-3 hidden sm:table-cell">Photo</th>
-                <th className="px-3 md:px-6 py-3 hidden sm:table-cell">Recurring</th>
+                <th className="px-3 md:px-6 py-3 hidden sm:table-cell">Frequency</th>
                 <th className="px-3 md:px-6 py-3">Status</th>
                 <th className="px-3 md:px-6 py-3">Actions</th>
               </tr>
@@ -232,7 +237,16 @@ export default function AdminTasks() {
                   </td>
                   <td className="px-3 md:px-6 py-4 text-accent font-medium">{task.points}</td>
                   <td className="px-3 md:px-6 py-4 text-slate-400 hidden sm:table-cell">{task.requires_photo ? 'Yes' : 'No'}</td>
-                  <td className="px-3 md:px-6 py-4 text-slate-400 hidden sm:table-cell">{task.is_recurring ? 'Daily' : 'One-time'}</td>
+                  <td className="px-3 md:px-6 py-4 hidden sm:table-cell">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      task.frequency === 'once' ? 'bg-slate-600/20 text-slate-400' :
+                      task.frequency === 'daily' ? 'bg-blue-500/20 text-blue-400' :
+                      task.frequency === 'weekly' ? 'bg-purple-500/20 text-purple-400' :
+                      'bg-orange-500/20 text-orange-400'
+                    }`}>
+                      {task.frequency === 'once' ? 'One-time' : task.frequency.charAt(0).toUpperCase() + task.frequency.slice(1)}
+                    </span>
+                  </td>
                   <td className="px-3 md:px-6 py-4">
                     <span className={`text-xs px-2 py-1 rounded-full ${task.is_active ? 'bg-green-500/20 text-green-400' : 'bg-slate-600/20 text-slate-400'}`}>
                       {task.is_active ? 'Active' : 'Inactive'}

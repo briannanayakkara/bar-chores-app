@@ -5,7 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+import bcrypt from 'https://esm.sh/bcryptjs@2.4.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,8 +56,8 @@ serve(async (req) => {
       return jsonResponse({ error: 'PIN not set for this account' }, 401);
     }
 
-    // Verify PIN against bcrypt hash (async only — hashSync crashes on Deno Deploy)
-    const pinValid = await bcrypt.compare(String(pin), profile.pin_hash);
+    // Verify PIN against bcrypt hash (bcryptjs sync — no Worker dependency)
+    const pinValid = bcrypt.compareSync(String(pin), profile.pin_hash);
 
     if (!pinValid) {
       return jsonResponse({ error: 'Invalid username or PIN' }, 401);

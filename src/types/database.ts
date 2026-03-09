@@ -44,6 +44,7 @@ export interface Profile {
 }
 
 export type TaskApprovalStatus = 'proposed' | 'active' | 'rejected';
+export type TaskFrequency = 'once' | 'daily' | 'weekly' | 'monthly';
 
 export interface Task {
   id: string;
@@ -52,7 +53,7 @@ export interface Task {
   description: string | null;
   points: number;
   requires_photo: boolean;
-  is_recurring: boolean;
+  frequency: TaskFrequency;
   is_active: boolean;
   created_by: string;
   proposed_by: string | null;
