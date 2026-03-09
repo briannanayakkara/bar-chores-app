@@ -2,46 +2,89 @@
 
 Triggers when writing or running tests.
 
-## Current State
+## Test Stack
 
-Vitest is NOT yet configured in this project. If tests are needed:
+- **Vitest** — configured in `vite.config.ts` with jsdom environment
+- **@testing-library/react** — component testing
+- **@testing-library/jest-dom** — DOM matchers (loaded via `src/tests/setup.ts`)
+- **Playwright** — E2E testing (configured in `playwright.config.ts`)
+- **@vitest/coverage-v8** — code coverage
 
-1. Install: `npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom`
-2. Add to vite.config.ts:
-   ```ts
-   test: {
-     globals: true,
-     environment: 'jsdom',
-     setupFiles: './src/test/setup.ts'
-   }
-   ```
-3. Add to package.json: `"test": "vitest"`
-4. Create `src/test/setup.ts` with `import '@testing-library/jest-dom'`
+## Test Structure
+
+```
+src/tests/
+  setup.ts                      # Vitest setup (jest-dom matchers)
+  unit/                         # Pure business logic tests
+  integration/                  # DEV Supabase integration tests
+  helpers/
+    testSetup.ts                # seedTestVenue(), getAuthenticatedClient()
+e2e/                            # Playwright E2E tests
+```
+
+## Scripts
+
+```bash
+npm run test:unit           # Unit tests only (~2s)
+npm run test:integration    # Integration tests (needs DEV_SUPABASE_SERVICE_ROLE_KEY)
+npm run test:e2e            # Playwright E2E (starts dev server automatically)
+npm run test:coverage       # Coverage report (V8 provider)
+npm run test:all            # Unit + integration + E2E
+npm run test:watch          # Vitest in watch mode
+npm run test:ui             # Vitest visual UI
+```
 
 ## Test File Conventions
 
-- Co-located: `ComponentName.test.tsx` next to `ComponentName.tsx`
-- Utility tests: `utils.test.ts` next to `utils.ts`
-- Use describe/it/expect from vitest
+- Unit tests: `src/tests/unit/*.test.ts`
+- Integration tests: `src/tests/integration/*.test.ts`
+- E2E tests: `e2e/*.spec.ts`
+- Use `describe/it/expect` from vitest
+- Integration tests use `describe.skipIf(!process.env.DEV_SUPABASE_SERVICE_ROLE_KEY)` to skip gracefully without credentials
 
 ## Patterns
 
-### Component Test
-```tsx
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
-import TaskCard from './TaskCard'
+### Unit Test (Pure Logic)
+```ts
+import { describe, it, expect } from 'vitest';
 
-describe('TaskCard', () => {
-  it('renders task title', () => {
-    render(<TaskCard title="Clean Fridges" points={150} />)
-    expect(screen.getByText('Clean Fridges')).toBeInTheDocument()
-  })
-})
+describe('Business Logic', () => {
+  it('calculates correctly', () => {
+    expect(calculate(100, 50)).toBe(50);
+  });
+});
 ```
 
-### Mocking Supabase
-```tsx
+### Integration Test (Supabase)
+```ts
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { seedTestVenue, TestContext } from '../helpers/testSetup';
+
+describe.skipIf(!process.env.DEV_SUPABASE_SERVICE_ROLE_KEY)('Feature', () => {
+  let ctx: TestContext;
+  beforeAll(async () => { ctx = await seedTestVenue(); }, 30000);
+  afterAll(async () => { await ctx?.cleanup(); }, 30000);
+
+  it('does something', async () => {
+    // Use ctx.client, ctx.venue, ctx.admin, ctx.staff1, ctx.staff2
+  });
+});
+```
+
+### E2E Test (Playwright)
+```ts
+import { test, expect } from '@playwright/test';
+
+test('user journey', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('input[type="email"]', 'admin@test.com');
+  await page.click('button[type="submit"]');
+  await expect(page).toHaveURL(/dashboard/);
+});
+```
+
+### Mocking Supabase (Unit Tests)
+```ts
 vi.mock('../../lib/supabase', () => ({
   supabase: {
     from: vi.fn(() => ({
@@ -51,6 +94,8 @@ vi.mock('../../lib/supabase', () => ({
 }))
 ```
 
-## Scripts
+## Coverage Targets
 
-See [scripts/gen-test.py](scripts/gen-test.py) for test boilerplate generation.
+- Business logic utilities: 90%
+- Supabase integration functions: 80%
+- React components: 60%

@@ -465,7 +465,7 @@
     <svg id="themeIcon" viewBox="0 0 24 24"></svg>
   </button>
   <h1>Bar Chores App</h1>
-  <p>Gamified bar staff task management — Application Flowchart v1.8.5</p>
+  <p>Gamified bar staff task management — Application Flowchart v1.9.0</p>
   <div class="badges">
     <span class="badge badge-sa">Super Admin</span>
     <span class="badge badge-va">Venue Admin</span>
@@ -488,7 +488,7 @@
   <div class="kb-hint"><span class="kb-key">Scroll</span> Zoom</div>
 </div>
 
-<footer>Bar Chores App v1.8.5 &mdash; March 2026</footer>
+<footer>Bar Chores App v1.9.0 &mdash; March 2026</footer>
 
 <!-- Fullscreen modal -->
 <div class="modal-overlay" id="modal">
@@ -1254,6 +1254,77 @@ const diagrams = [
         timestamp created_at
     }`,
     tooltips: {},
+  },
+  {
+    id: 'cicd',
+    title: 'CI/CD Pipeline with Testing',
+    desc: 'Every push triggers a pipeline: type check, unit tests, integration tests against DEV Supabase, E2E tests with Playwright, coverage report. Deployment only happens if ALL tests pass.',
+    code: `flowchart TD
+    PUSH["Push to Feature Branch"] --> TC["TypeScript<br/>Type Check"]
+    TC --> UNIT["Unit Tests<br/>Vitest (53 tests)"]
+    UNIT --> INT["Integration Tests<br/>DEV Supabase"]
+    INT --> E2E["E2E Tests<br/>Playwright"]
+    E2E --> COV["Coverage Report<br/>Upload Artifact"]
+
+    subgraph DEV_DEPLOY["Merge to develop"]
+        COV --> PR_DEV["PR into develop"]
+        PR_DEV --> MERGE_DEV["Merge"]
+        MERGE_DEV --> FULL_DEV["Full Test Suite"]
+        FULL_DEV ==>|"All Pass"| DEPLOY_DEV["Deploy to<br/>bar-chores-dev.vercel.app"]
+        FULL_DEV -.->|"Any Fail"| BLOCK_DEV["Block Deploy"]
+    end
+
+    subgraph PROD_DEPLOY["Merge to main"]
+        DEPLOY_DEV --> PR_PROD["PR develop → main"]
+        PR_PROD --> MERGE_PROD["Merge"]
+        MERGE_PROD --> FULL_PROD["Full Test Suite"]
+        FULL_PROD ==>|"All Pass"| DEPLOY_PROD["Deploy to<br/>bar-chores-app.vercel.app"]
+        FULL_PROD -.->|"Any Fail"| BLOCK_PROD["Block Deploy"]
+    end`,
+    tooltips: {
+      'PUSH': { title: 'Feature Branch Push', body: 'All development happens on feature branches. Never commit directly to develop or main.' },
+      'TC': { title: 'Type Check', body: 'Runs npx tsc -b to catch TypeScript errors before tests.' },
+      'UNIT': { title: 'Unit Tests', body: '53 Vitest tests covering points, rewards, PIN, task completion, redemption codes, color, and date utilities.' },
+      'INT': { title: 'Integration Tests', body: 'Tests against DEV Supabase: RLS policies, points ledger trigger, reward reservation, staff auth, task completion.' },
+      'E2E': { title: 'E2E Tests', body: 'Playwright tests: admin login, staff login, create staff, task completion, leaderboard, reward request.' },
+      'COV': { title: 'Coverage Report', body: 'V8 coverage provider generates HTML report. Uploaded as GitHub Actions artifact.' },
+      'DEPLOY_DEV': { title: 'DEV Deployment', body: 'Vercel preview deployment aliased to bar-chores-dev.vercel.app. Connected to DEV Supabase.' },
+      'DEPLOY_PROD': { title: 'PROD Deployment', body: 'Vercel production deployment at bar-chores-app.vercel.app. Connected to PROD Supabase.' },
+      'BLOCK_DEV': { title: 'Blocked', body: 'If any test fails, the deployment is blocked. Fix the tests before merging.' },
+      'BLOCK_PROD': { title: 'Blocked', body: 'Same gate for production. All tests must pass before going live.' },
+    },
+  },
+  {
+    id: 'reward-flow',
+    title: 'Reward Reservation & Approval Flow',
+    desc: 'When staff requests a reward, points are reserved (not immediately deducted). Admin approves to confirm the deduction and generate a redemption code, or rejects to restore the points.',
+    code: `flowchart TD
+    A["Staff views<br/>Available Points"] --> B{"Enough<br/>points?"}
+    B -.->|"No"| C["Button disabled"]
+    B ==>|"Yes"| D["Staff requests<br/>reward"]
+    D --> E["Insert reward_redemptions<br/>status=pending<br/>points_reserved=cost"]
+    E --> F["Available points<br/>reduced immediately"]
+    F --> G{"Admin<br/>decision"}
+    G ==>|"Approve"| H["Insert negative<br/>points_ledger entry"]
+    H --> I["Trigger updates<br/>profiles.points_total"]
+    I --> J["Generate code<br/>e.g. DRK-X7K2"]
+    J --> K["Staff sees<br/>redemption code"]
+    G -.->|"Reject"| L["status=rejected<br/>points freed"]
+    L --> M["Available points<br/>restored"]
+
+    style E fill:#1a365d,stroke:#3b82f6
+    style H fill:#064e3b,stroke:#34d399
+    style L fill:#4c0519,stroke:#fb7185`,
+    tooltips: {
+      'A': { title: 'Available Points', body: 'Calculated as: points_total minus sum of points_reserved on all pending redemptions.' },
+      'D': { title: 'Reward Request', body: 'Staff taps a reward button. A reward_redemptions row is inserted with status=pending.' },
+      'E': { title: 'Reservation', body: 'points_reserved is set to the reward cost. This does NOT insert a ledger entry yet.' },
+      'F': { title: 'Immediate Effect', body: 'Available points are recalculated including the new reservation. UI updates in real-time.' },
+      'H': { title: 'Ledger Entry', body: 'On approval, a negative delta is inserted into points_ledger, which fires the trigger.' },
+      'I': { title: 'Points Trigger', body: 'Postgres trigger on points_ledger insert updates profiles.points_total automatically.' },
+      'J': { title: 'Redemption Code', body: 'Unique code like DRK-X7K2. Staff shows this at the bar to claim their reward.' },
+      'L': { title: 'Rejection', body: 'status changes to rejected. No ledger entry. Reserved points are freed.' },
+    },
   },
 ];
 

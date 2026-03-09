@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { readFileSync } from 'fs'
@@ -14,4 +15,15 @@ export default defineConfig(({ mode: _mode }) => ({
   envDir: '.',
   // Vite auto-loads .env.[mode] files — running `vite` loads .env.development,
   // running `vite build` loads .env.production
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/tests/setup.ts'],
+    include: ['src/tests/**/*.test.ts', 'src/tests/**/*.test.tsx'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      include: ['src/lib/**', 'src/config/**', 'src/context/**'],
+    },
+  },
 }))
