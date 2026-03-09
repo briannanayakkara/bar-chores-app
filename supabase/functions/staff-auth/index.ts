@@ -56,8 +56,8 @@ serve(async (req) => {
       return jsonResponse({ error: 'PIN not set for this account' }, 401);
     }
 
-    // Verify PIN against bcrypt hash (use Sync — async uses Workers which crash on Deno Deploy)
-    const pinValid = bcrypt.compareSync(pin, profile.pin_hash);
+    // Verify PIN against bcrypt hash (async only — hashSync crashes on Deno Deploy)
+    const pinValid = await bcrypt.compare(String(pin), profile.pin_hash);
 
     if (!pinValid) {
       return jsonResponse({ error: 'Invalid username or PIN' }, 401);

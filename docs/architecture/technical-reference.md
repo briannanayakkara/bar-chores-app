@@ -149,19 +149,35 @@ A multi-venue, mobile-first web app that turns bar staff chores into a points-ba
 
 > A Postgres trigger fires on insert and updates `profiles.points_total` automatically.
 
+### `reward_types`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | Auto-generated |
+| venue_id | uuid FK | Scopes reward type to venue |
+| name | text | e.g. `Drink Ticket` |
+| emoji | text | e.g. `🍺` |
+| points_required | int | Cost in points |
+| is_active | boolean | Admin can deactivate |
+| created_at | timestamptz | Auto-set |
+| updated_at | timestamptz | Auto-updated |
+
 ### `reward_redemptions`
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid PK | Auto-generated |
 | profile_id | uuid FK | Staff member redeeming |
 | venue_id | uuid FK | Denormalised for RLS |
-| reward_type | text | `drink_ticket` / `bottle_ticket` |
-| points_spent | int | 100 per drink, 1000 per bottle |
+| reward_type | text | Legacy label e.g. `drink_ticket` |
+| reward_type_id | uuid FK nullable | References reward_types.id |
+| points_spent | int | Final points deducted on approval |
+| points_reserved | int | Points reserved while pending |
 | quantity | int | Number of tickets |
 | status | text | `pending` / `approved` / `rejected` |
 | redemption_code | text UNIQUE | e.g. `DRK-X7K2` — bartender verifies this |
 | used_at | timestamptz | Set when bartender marks as used |
 | approved_by | uuid FK nullable | Admin who approved |
+| resolved_at | timestamptz | When admin approved or rejected |
+| resolved_by | uuid FK nullable | Admin who resolved |
 | created_at | timestamptz | Auto-set |
 
 ---
@@ -234,12 +250,24 @@ Both Supabase projects must have these auth settings:
 - Every award = positive `points_ledger` entry
 - `profiles.points_total` updated via Postgres trigger (fast leaderboard queries)
 
-### Redeeming Rewards
-- Minimum **100 points** = 1 Drink Ticket 🍺
-- Minimum **1000 points** = 1 Bottle Ticket 🍾
-- Staff requests → admin approves → unique code generated (e.g. `DRK-X7K2`)
+### Dynamic Reward Types
+- Reward types are **per-venue** and fully configurable by venue admins via the `/admin/rewards` page
+- Each reward type has: `name`, `emoji`, `points_required`, `is_active`
+- Stored in the `reward_types` table (FK to `venues`)
+- Admins can create, edit, activate/deactivate reward types — no hardcoded drink/bottle split
+
+### Reserve → Approve/Reject Flow
+- When staff requests a reward, points are **reserved** (not immediately deducted)
+- **Available points** = `points_total` minus sum of `points_reserved` on pending redemptions
+- A `reward_redemptions` row is inserted with `status=pending` and `points_reserved` set to the reward cost
+- If the reward button would exceed available points, it is disabled in the UI
+- **Admin approves** → negative `points_ledger` entry inserted, `points_total` updated by trigger, unique redemption code generated (e.g. `DRK-X7K2`), `resolved_at` and `resolved_by` recorded
+- **Admin rejects** → `status=rejected`, reserved points are freed (available balance restored), `resolved_at` and `resolved_by` recorded
 - Bartender looks up code and marks as used → prevents double redemption
-- Points deducted via negative `points_ledger` entry on approval
+
+### New/Updated Tables
+- **`reward_types`** — `id`, `venue_id` (FK), `name`, `emoji`, `points_required`, `is_active`, `created_at`, `updated_at`
+- **`reward_redemptions`** (updated) — now includes `reward_type_id` (FK to `reward_types`), `points_reserved`, `resolved_at`, `resolved_by` in addition to existing columns
 
 ---
 

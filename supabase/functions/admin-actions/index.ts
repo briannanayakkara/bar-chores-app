@@ -124,7 +124,7 @@ serve(async (req) => {
           return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
         }
 
-        const pinHash = bcrypt.hashSync(pin, 10);
+        const pinHash = await bcrypt.hash(String(pin), await bcrypt.genSalt(10));
 
         // Check for duplicate username in this venue
         const { data: existing } = await adminClient
@@ -188,7 +188,7 @@ serve(async (req) => {
           if (pin.length < 4) {
             return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
           }
-          updates.pin_hash = bcrypt.hashSync(pin, 10);
+          updates.pin_hash = await bcrypt.hash(String(pin), await bcrypt.genSalt(10));
         }
 
         const { error: updateErr } = await adminClient
@@ -214,7 +214,7 @@ serve(async (req) => {
           return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
         }
 
-        const pinHash = bcrypt.hashSync(new_pin, 10);
+        const pinHash = await bcrypt.hash(String(new_pin), await bcrypt.genSalt(10));
         const { error: updateErr } = await adminClient
           .from('profiles')
           .update({ pin_hash: pinHash })
@@ -501,6 +501,227 @@ serve(async (req) => {
         return jsonResponse({
           success: true,
           message: `Admin "${targetProfile.display_name || targetProfile.email}" assigned to venue`,
+        });
+      }
+
+      case 'reset-database': {
+        if (callerProfile.role !== 'super_admin') {
+          return jsonResponse({ error: 'Only super admins can reset the database' }, 403);
+        }
+
+        const counts: Record<string, number> = {};
+
+        // Step 1: Delete all data in FK order
+        await adminClient.from('reward_redemptions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await adminClient.from('points_ledger').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await adminClient.from('task_assignments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await adminClient.from('tasks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await adminClient.from('reward_types').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        // Delete all non-super-admin profiles and their auth users
+        const { data: nonSuperProfiles } = await adminClient
+          .from('profiles')
+          .select('id')
+          .neq('role', 'super_admin');
+        if (nonSuperProfiles) {
+          for (const p of nonSuperProfiles) {
+            await adminClient.from('profiles').delete().eq('id', p.id);
+            await adminClient.auth.admin.deleteUser(p.id).catch(() => {});
+          }
+          counts.deleted_profiles = nonSuperProfiles.length;
+        }
+
+        await adminClient.from('venue_settings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await adminClient.from('venues').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        // Step 2: Also clean up any orphaned auth users (not super admin)
+        const { data: authUsers } = await adminClient.auth.admin.listUsers();
+        if (authUsers?.users) {
+          for (const u of authUsers.users) {
+            if (u.id !== callerUser.id) {
+              await adminClient.auth.admin.deleteUser(u.id).catch(() => {});
+            }
+          }
+        }
+
+        // Step 3: Seed venues
+        const { data: venues } = await adminClient.from('venues').insert([
+          { name: 'Little Green Door', address: 'Gammel Strand 40, 1202 København', slug: 'little-green-door' },
+          { name: 'KOKO', address: 'Studiestræde 7, København', slug: 'koko' },
+        ]).select();
+        counts.venues = venues?.length ?? 0;
+
+        if (!venues || venues.length < 2) {
+          return jsonResponse({ error: 'Failed to create venues' }, 500);
+        }
+
+        const lgdId = venues[0].id;
+        const kokoId = venues[1].id;
+
+        // Step 4: Seed admins (create auth users + profiles)
+        const adminSeeds = [
+          { email: 'brian@rekom.dk', password: 'Admin1234!', display_name: 'Brian', venue_id: lgdId },
+          { email: 'bn@rekom.dk', password: 'Admin1234!', display_name: 'BN', venue_id: kokoId },
+        ];
+
+        for (const admin of adminSeeds) {
+          const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
+            email: admin.email,
+            password: admin.password,
+            email_confirm: true,
+            user_metadata: { display_name: admin.display_name },
+          });
+          if (authErr || !authData.user) continue;
+          await adminClient.from('profiles').insert({
+            id: authData.user.id,
+            venue_id: admin.venue_id,
+            role: 'venue_admin',
+            email: admin.email,
+            display_name: admin.display_name,
+          });
+        }
+        counts.admins = adminSeeds.length;
+
+        // Step 5: Seed staff (create auth users + profiles with bcrypt PINs)
+        const staffSeeds = [
+          { username: 'jake.lgd', display_name: 'Jake Murphy', pin: '1234', venue_id: lgdId },
+          { username: 'sofia.lgd', display_name: 'Sofia Andersen', pin: '2345', venue_id: lgdId },
+          { username: 'marcus.lgd', display_name: 'Marcus Nielsen', pin: '3456', venue_id: lgdId },
+          { username: 'ella.lgd', display_name: 'Ella Christensen', pin: '4567', venue_id: lgdId },
+          { username: 'liam.lgd', display_name: 'Liam Jensen', pin: '5678', venue_id: lgdId },
+          { username: 'noah.koko', display_name: 'Noah Hansen', pin: '1111', venue_id: kokoId },
+          { username: 'mia.koko', display_name: 'Mia Pedersen', pin: '2222', venue_id: kokoId },
+          { username: 'oscar.koko', display_name: 'Oscar Larsen', pin: '3333', venue_id: kokoId },
+          { username: 'freya.koko', display_name: 'Freya Møller', pin: '4444', venue_id: kokoId },
+          { username: 'emil.koko', display_name: 'Emil Thomsen', pin: '5555', venue_id: kokoId },
+        ];
+
+        for (const staff of staffSeeds) {
+          const staffEmail = `staff_${staff.username.replace('.', '_')}@${staff.venue_id}.internal`;
+          const staffPassword = crypto.randomUUID();
+          const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
+            email: staffEmail,
+            password: staffPassword,
+            email_confirm: true,
+          });
+          if (authErr || !authData.user) continue;
+
+          const pinHash = await bcrypt.hash(String(staff.pin), await bcrypt.genSalt(10));
+          await adminClient.from('profiles').insert({
+            id: authData.user.id,
+            venue_id: staff.venue_id,
+            role: 'staff',
+            username: staff.username,
+            display_name: staff.display_name,
+            pin_hash: pinHash,
+            email: staffEmail,
+          });
+        }
+        counts.staff = staffSeeds.length;
+
+        // Step 6: Seed reward types (4 per venue)
+        const rewardTypeSeeds = [lgdId, kokoId].flatMap(venueId => [
+          { venue_id: venueId, name: 'Drink Ticket', emoji: '🍺', points_required: 100 },
+          { venue_id: venueId, name: 'Tote Bag', emoji: '👜', points_required: 500 },
+          { venue_id: venueId, name: 'Bottle Ticket', emoji: '🍾', points_required: 1000 },
+          { venue_id: venueId, name: 'Hoodie', emoji: '👕', points_required: 2000 },
+        ]);
+        await adminClient.from('reward_types').insert(rewardTypeSeeds);
+        counts.reward_types = rewardTypeSeeds.length;
+
+        // Step 7: Seed tasks
+        const lgdTasks = [
+          { title: 'Open Bar Setup', description: 'Set up all bottles, garnishes and tools before opening', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Polish All Glassware', description: 'Polish every glass and ensure no smudges or watermarks', points: 75, requires_photo: false, is_recurring: true },
+          { title: 'Clean Coffee Machine', description: 'Full clean and descale of the espresso machine', points: 150, requires_photo: true, is_recurring: true },
+          { title: 'Restock Beer Fridge', description: 'Ensure all beers are stocked, rotated and cold', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Wipe Down All Surfaces', description: 'Clean and sanitise all bar surfaces and countertops', points: 80, requires_photo: false, is_recurring: true },
+          { title: 'Mop Bar Floor', description: 'Mop the entire bar floor including behind the bar', points: 120, requires_photo: false, is_recurring: true },
+          { title: 'Empty All Bins', description: 'Empty all bins and replace liners throughout the venue', points: 80, requires_photo: false, is_recurring: true },
+          { title: 'Deep Clean Ice Machine', description: 'Full clean and sanitise the ice machine', points: 500, requires_photo: true, is_recurring: false },
+          { title: 'Restock Spirits', description: 'Check and restock all spirit levels on the back bar', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Clean Fridges', description: 'Full clean of all bar fridges inside and out', points: 600, requires_photo: true, is_recurring: false },
+          { title: 'Check and Restock Mixers', description: 'Ensure all mixers, sodas and juices are stocked', points: 75, requires_photo: false, is_recurring: true },
+          { title: 'Organise Stock Room', description: 'Organise and label all stock in the back room', points: 400, requires_photo: true, is_recurring: false },
+          { title: 'Clean Toilets', description: 'Full clean of all customer toilets', points: 150, requires_photo: true, is_recurring: true },
+          { title: 'Wipe Down Menus', description: 'Clean and sanitise all menus and table cards', points: 50, requires_photo: false, is_recurring: true },
+          { title: 'End of Night Cash Up', description: 'Count the till and prepare the cash up report', points: 200, requires_photo: false, is_recurring: true },
+          { title: 'Close Bar Checklist', description: 'Complete the full closing checklist for the bar', points: 150, requires_photo: false, is_recurring: true },
+          { title: 'Restock Paper Products', description: 'Restock napkins, straws, coasters throughout', points: 60, requires_photo: false, is_recurring: true },
+          { title: 'Check Expiry Dates', description: 'Check all perishables and remove anything expired', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Deep Clean Drains', description: 'Full clean of all bar drains with cleaning solution', points: 700, requires_photo: true, is_recurring: false },
+          { title: 'Wash Bar Mats', description: 'Remove, wash and dry all rubber bar mats', points: 200, requires_photo: true, is_recurring: false },
+        ];
+
+        const kokoTasks = [
+          { title: 'Open Venue Setup', description: 'Set up all areas before doors open', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Sound System Check', description: 'Test all speakers, mics and sound levels', points: 150, requires_photo: false, is_recurring: true },
+          { title: 'Clean DJ Booth', description: 'Wipe down DJ booth, controller and equipment', points: 200, requires_photo: true, is_recurring: true },
+          { title: 'Restock Bar Fridges', description: 'Stock all fridges with drinks and check rotation', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Polish Bar Surfaces', description: 'Clean and polish all bar surfaces to a shine', points: 80, requires_photo: false, is_recurring: true },
+          { title: 'Set Up VIP Area', description: 'Arrange VIP seating, bottles and table setup', points: 150, requires_photo: false, is_recurring: true },
+          { title: 'Mop Dance Floor', description: 'Mop and clean the entire dance floor area', points: 120, requires_photo: false, is_recurring: true },
+          { title: 'Empty All Bins', description: 'Empty all bins and replace liners', points: 80, requires_photo: false, is_recurring: true },
+          { title: 'Restock Spirits and Mixers', description: 'Check and restock all spirits and mixers', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Deep Clean Toilets', description: 'Full deep clean of all toilets and restrooms', points: 200, requires_photo: true, is_recurring: true },
+          { title: 'Check Lighting Rig', description: 'Test all lights, strobes and effects', points: 150, requires_photo: false, is_recurring: true },
+          { title: 'Clean Ice Machines', description: 'Full clean and sanitise all ice machines', points: 500, requires_photo: true, is_recurring: false },
+          { title: 'Organise Back of House', description: 'Clean and organise the entire back of house area', points: 400, requires_photo: true, is_recurring: false },
+          { title: 'Wipe Down All Seating', description: 'Clean and sanitise all seats, booths and surfaces', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Restock Coat Check', description: 'Organise and restock coat check area', points: 75, requires_photo: false, is_recurring: true },
+          { title: 'End of Night Sweep', description: 'Full sweep and mop of all areas after closing', points: 150, requires_photo: false, is_recurring: true },
+          { title: 'Cash Up and Reports', description: 'Complete till count and nightly reports', points: 200, requires_photo: false, is_recurring: true },
+          { title: 'Deep Clean Bar Fridges', description: 'Full internal clean of all bar fridges', points: 600, requires_photo: true, is_recurring: false },
+          { title: 'Check Fire Exits', description: 'Check all fire exits are clear and signage is correct', points: 100, requires_photo: false, is_recurring: true },
+          { title: 'Restock Paper and Sundries', description: 'Restock napkins, straws, coasters, toilet paper', points: 60, requires_photo: false, is_recurring: true },
+        ];
+
+        // We need a created_by for tasks — use the first admin profile for each venue
+        const { data: lgdAdmin } = await adminClient.from('profiles').select('id').eq('venue_id', lgdId).eq('role', 'venue_admin').limit(1).single();
+        const { data: kokoAdmin } = await adminClient.from('profiles').select('id').eq('venue_id', kokoId).eq('role', 'venue_admin').limit(1).single();
+
+        if (lgdAdmin) {
+          await adminClient.from('tasks').insert(
+            lgdTasks.map(t => ({ ...t, venue_id: lgdId, created_by: lgdAdmin.id, approval_status: 'active' }))
+          );
+        }
+        if (kokoAdmin) {
+          await adminClient.from('tasks').insert(
+            kokoTasks.map(t => ({ ...t, venue_id: kokoId, created_by: kokoAdmin.id, approval_status: 'active' }))
+          );
+        }
+        counts.tasks = lgdTasks.length + kokoTasks.length;
+
+        // Step 8: Seed task assignments (1 per staff member)
+        const { data: allStaff } = await adminClient.from('profiles').select('id, venue_id').eq('role', 'staff');
+        if (allStaff) {
+          for (const staff of allStaff) {
+            // Get the first task for their venue
+            const { data: firstTask } = await adminClient.from('tasks')
+              .select('id')
+              .eq('venue_id', staff.venue_id)
+              .limit(1)
+              .single();
+            if (!firstTask) continue;
+
+            const adminId = staff.venue_id === lgdId ? lgdAdmin?.id : kokoAdmin?.id;
+            if (!adminId) continue;
+
+            await adminClient.from('task_assignments').insert({
+              task_id: firstTask.id,
+              venue_id: staff.venue_id,
+              assigned_to: staff.id,
+              assigned_by: adminId,
+              due_date: new Date().toISOString().split('T')[0],
+            });
+          }
+          counts.task_assignments = allStaff.length;
+        }
+
+        return jsonResponse({
+          success: true,
+          message: `Database reset complete! Seeded: ${counts.venues} venues, ${counts.admins} admins, ${counts.staff} staff, ${counts.reward_types} reward types, ${counts.tasks} tasks, ${counts.task_assignments} assignments.`,
+          counts,
         });
       }
 

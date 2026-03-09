@@ -60,6 +60,17 @@ export interface Task {
   created_at: string;
 }
 
+export interface RewardTypeRow {
+  id: string;
+  venue_id: string;
+  name: string;
+  emoji: string;
+  points_required: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TaskAssignment {
   id: string;
   task_id: string;
@@ -88,12 +99,16 @@ export interface RewardRedemption {
   id: string;
   profile_id: string;
   venue_id: string;
-  reward_type: RewardType;
+  reward_type: RewardType | null;
+  reward_type_id: string | null;
   points_spent: number;
+  points_reserved: number;
   quantity: number;
   status: RewardStatus;
   redemption_code: string;
   used_at: string | null;
   approved_by: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
   created_at: string;
 }

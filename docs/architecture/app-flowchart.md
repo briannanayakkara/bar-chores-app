@@ -247,37 +247,26 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    subgraph EARN["Earning Points"]
-        TASK_DONE["Task Approved"] --> LEDGER_POS["Points Ledger\n+ positive delta"]
-        LEDGER_POS --> TRIGGER["DB Trigger\nupdates points_total"]
-        TRIGGER --> PROFILE["Profile\npoints_total updated"]
-    end
-
-    subgraph SPEND["Spending Points"]
-        REQUEST["Staff requests\nreward"] --> ADMIN_REV["Admin reviews"]
-        ADMIN_REV -->|Approve| LEDGER_NEG["Points Ledger\n- negative delta"]
-        ADMIN_REV -->|Reject| DENIED["Request denied\npoints kept"]
-        LEDGER_NEG --> TRIGGER2["DB Trigger\nupdates points_total"]
-        TRIGGER2 --> CODE["Redemption code\ngenerated"]
-    end
-
-    subgraph DISPLAY["Live Displays"]
-        PROFILE --> LEADERBOARD["Leaderboard\nranked by points"]
-        PROFILE --> DASH_POINTS["Dashboard\npoints card"]
-        PROFILE --> REWARD_BAL["Rewards page\nbalance check"]
-    end
-
-    subgraph REALTIME["Realtime Updates"]
-        LEDGER_POS --> RT["Supabase Realtime\npoints_ledger INSERT"]
-        LEDGER_NEG --> RT
-        RT --> ACTIVITY["Activity Feed\nstaff dashboard"]
-        RT --> LB_UPDATE["Leaderboard\nauto-refresh"]
-        RT --> ADMIN_DASH["Admin dashboard\nlive stats"]
-    end
-
-    style EARN fill:#166534,color:#fff
-    style SPEND fill:#991b1b,color:#fff
-    style REALTIME fill:#1e40af,color:#fff
+    A[Staff completes task] --> B{Points < 500?}
+    B -->|Yes| C[Auto-approve, add to ledger]
+    B -->|No| D[Submit with photo → Admin review]
+    D --> E{Admin approves?}
+    E -->|Yes| C
+    E -->|No| F[Rejected — no points]
+    C --> G["Points added to profile.points_total (trigger)"]
+    G --> H[Staff views Rewards page]
+    H --> I["Available = total - pending reserved"]
+    I --> J[Staff selects reward type]
+    J --> K{Available >= cost?}
+    K -->|No| L[Button disabled]
+    K -->|Yes| M["Insert reward_redemption: status=pending, points_reserved=cost"]
+    M --> N[Available points decrease in UI]
+    N --> O[Admin sees pending request]
+    O --> P{Admin decision}
+    P -->|Approve| Q["Insert negative points_ledger, generate code"]
+    P -->|Reject| R["status=rejected, reserved points freed"]
+    Q --> S["Staff sees code, points_total updated"]
+    R --> T[Staff available points restored]
 ```
 
 ---
@@ -417,6 +406,8 @@ erDiagram
     VENUES ||--o{ TASK_ASSIGNMENTS : "has assignments"
     VENUES ||--o{ POINTS_LEDGER : "tracks points"
     VENUES ||--o{ REWARD_REDEMPTIONS : "tracks rewards"
+    VENUES ||--o{ REWARD_TYPES : "has"
+    REWARD_TYPES ||--o{ REWARD_REDEMPTIONS : "referenced by"
 
     PROFILES ||--o{ TASK_ASSIGNMENTS : "assigned to"
     PROFILES ||--o{ POINTS_LEDGER : "earns/spends"
@@ -483,14 +474,32 @@ erDiagram
         text reason
         uuid assignment_id FK
     }
+    REWARD_TYPES {
+        uuid id PK
+        uuid venue_id FK
+        text name
+        text emoji
+        int points_required
+        bool is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
     REWARD_REDEMPTIONS {
         uuid id PK
         uuid profile_id FK
         uuid venue_id FK
         text reward_type
+        uuid reward_type_id FK
         int points_spent
+        int points_reserved
+        int quantity
         text status
         text redemption_code
+        timestamptz used_at
+        uuid approved_by FK
+        timestamptz resolved_at
+        uuid resolved_by FK
+        timestamptz created_at
     }
 ```
 

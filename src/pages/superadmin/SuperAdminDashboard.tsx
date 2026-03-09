@@ -37,6 +37,12 @@ export default function SuperAdminDashboard() {
   // Unassigned admins
   const [unassignedAdmins, setUnassignedAdmins] = useState<Profile[]>([]);
 
+  // Reset database
+  const [resetting, setResetting] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState('');
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetProgress, setResetProgress] = useState('');
+
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -230,6 +236,25 @@ export default function SuperAdminDashboard() {
     if (err) { setError(err); } else { setMessage('Invite cancelled'); loadVenues(); }
   }
 
+  async function handleResetDatabase() {
+    if (resetConfirm !== 'RESET') return;
+    setResetting(true); setResetProgress('Resetting database...');
+    setError('');
+
+    const { data, error: err } = await adminAction<{ message: string; counts: Record<string, number> }>('reset-database', {});
+
+    setResetting(false); setShowResetDialog(false); setResetConfirm('');
+    if (err) {
+      setError(`Reset failed: ${err}`);
+      setResetProgress('');
+    } else {
+      setMessage(data?.message || 'Database reset complete!');
+      setResetProgress('');
+      loadVenues();
+      loadUnassignedAdmins();
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -266,7 +291,48 @@ export default function SuperAdminDashboard() {
           >
             + New Venue
           </button>
+          <button
+            onClick={() => setShowResetDialog(true)}
+            className="px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-500 transition-colors min-h-[48px]"
+          >
+            Reset Database
+          </button>
         </div>
+
+        {/* Reset Database Dialog */}
+        {showResetDialog && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-red-400">Reset Database</h2>
+            <p className="text-sm text-slate-300">
+              This will <strong className="text-red-400">delete ALL data</strong> (venues, staff, tasks, points, rewards) and re-seed from scratch. Your super admin account will be preserved.
+            </p>
+            <div>
+              <label className="block text-sm text-slate-300 mb-1">Type RESET to confirm</label>
+              <input
+                value={resetConfirm}
+                onChange={e => setResetConfirm(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700 border border-red-500/50 rounded-lg text-white focus:outline-none focus:border-red-400"
+                placeholder="RESET"
+              />
+            </div>
+            {resetProgress && <p className="text-sm text-yellow-400">{resetProgress}</p>}
+            <div className="flex gap-3">
+              <button
+                onClick={handleResetDatabase}
+                disabled={resetConfirm !== 'RESET' || resetting}
+                className="px-6 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-500 disabled:opacity-50 min-h-[48px]"
+              >
+                {resetting ? 'Resetting...' : 'Confirm Reset'}
+              </button>
+              <button
+                onClick={() => { setShowResetDialog(false); setResetConfirm(''); }}
+                className="px-6 py-2.5 text-slate-300 border border-slate-600 rounded-lg min-h-[48px]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Create Venue Form */}
         {showCreate && (
