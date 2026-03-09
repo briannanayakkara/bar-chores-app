@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { logger } from '../../lib/logger';
 import { getLocalDate } from '../../lib/date';
 import confetti from 'canvas-confetti';
-import type { Task } from '../../types/database';
+import type { Task, TaskFrequency } from '../../types/database';
 
 interface TaskAssignment {
   id: string;
@@ -13,6 +13,25 @@ interface TaskAssignment {
   status: string;
   due_date: string;
   task: { title: string; description: string | null; points: number; requires_photo: boolean } | null;
+}
+
+function getPeriodStart(frequency: TaskFrequency): string {
+  const now = new Date();
+  switch (frequency) {
+    case 'daily':
+      return now.toISOString().split('T')[0];
+    case 'weekly': {
+      const day = now.getDay(); // 0=Sun, 1=Mon...
+      const diff = day === 0 ? 6 : day - 1; // Monday = start
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - diff);
+      return monday.toISOString().split('T')[0];
+    }
+    case 'monthly':
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    default:
+      return '1970-01-01';
+  }
 }
 
 function fireConfetti(points: number) {
@@ -100,15 +119,41 @@ export default function StaffTasks() {
       .select('*')
       .eq('venue_id', venueId)
       .eq('is_active', true)
+      .eq('approval_status', 'active')
       .order('points', { ascending: false });
 
     if (taskErr) {
       logger.error('Failed to load tasks', taskErr.message);
     } else {
+      // IDs of tasks I already have a pending/submitted assignment for today
       const myTaskIds = new Set((assignments || []).filter((a: { assigned_to: string | null }) => a.assigned_to === profile.id).map((a: { task_id: string }) => a.task_id));
-      const available = (tasks || []).filter(t => !myTaskIds.has(t.id));
+
+      // Venue-wide frequency enforcement: check completed/submitted assignments in current period
+      const monthStart = getPeriodStart('monthly');
+      const { data: periodAssignments } = await supabase
+        .from('task_assignments')
+        .select('task_id, status, due_date')
+        .eq('venue_id', venueId)
+        .gte('due_date', monthStart)
+        .in('status', ['approved', 'submitted']);
+
+      // Build map of task_id → task for frequency lookup
+      const tasksMap = new Map((tasks || []).map(t => [t.id, t as Task]));
+
+      // Find tasks already completed within their frequency window (venue-wide)
+      const completedInPeriod = new Set<string>();
+      for (const a of periodAssignments || []) {
+        const task = tasksMap.get(a.task_id);
+        if (!task || task.frequency === 'once') continue;
+        const periodStart = getPeriodStart(task.frequency);
+        if (a.due_date >= periodStart) {
+          completedInPeriod.add(a.task_id);
+        }
+      }
+
+      const available = (tasks || []).filter(t => !myTaskIds.has(t.id) && !completedInPeriod.has(t.id));
       setAvailableTasks(available as Task[]);
-      logger.api(`${available.length} tasks available to take`);
+      logger.api(`${available.length} tasks available (${completedInPeriod.size} completed this period)`);
     }
 
     setLoading(false);
@@ -214,7 +259,7 @@ export default function StaffTasks() {
       description: proposeDesc || null,
       points: 0,
       requires_photo: false,
-      is_recurring: false,
+      frequency: 'once',
       is_active: false,
       created_by: profile.id,
       proposed_by: profile.id,
@@ -385,8 +430,14 @@ export default function StaffTasks() {
                     {task.requires_photo && (
                       <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full">Photo</span>
                     )}
-                    {task.is_recurring && (
-                      <span className="text-xs bg-slate-600/50 text-slate-300 px-2 py-1 rounded-full">Daily</span>
+                    {task.frequency !== 'once' && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        task.frequency === 'daily' ? 'bg-blue-500/20 text-blue-400' :
+                        task.frequency === 'weekly' ? 'bg-purple-500/20 text-purple-400' :
+                        'bg-orange-500/20 text-orange-400'
+                      }`}>
+                        {task.frequency.charAt(0).toUpperCase() + task.frequency.slice(1)}
+                      </span>
                     )}
                   </div>
                 </div>

@@ -67,7 +67,7 @@ Auto-created by trigger on venue insert.
 | description | text | |
 | points | int | NOT NULL |
 | requires_photo | boolean | auto-true if points >= 500 |
-| is_recurring | boolean | resets daily via pg_cron |
+| frequency | text | CHECK: once/daily/weekly/monthly; resets per frequency via pg_cron |
 | is_active | boolean | default true |
 | created_by | uuid | FK profiles(id) |
 | created_at | timestamptz | |

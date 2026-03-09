@@ -5,7 +5,7 @@
 - File naming: NNN_descriptive_name.sql (zero-padded 3-digit prefix)
 - One logical concern per file (schema, RLS, triggers, cron)
 - Section dividers: `-- ============` with descriptive comments
-- Next migration number: 007
+- Next migration number: 011
 
 ## RLS Patterns
 
@@ -45,7 +45,7 @@ Tier system:
 ## Database Conventions
 
 - Table naming: snake_case plural (venues, profiles, tasks)
-- Column naming: snake_case (venue_id, points_total, is_recurring)
+- Column naming: snake_case (venue_id, points_total, frequency)
 - Index naming: idx_{table}_{field(s)}
 - Trigger naming: trg_{table}_{action}
 - CHECK constraints for enum-like values
