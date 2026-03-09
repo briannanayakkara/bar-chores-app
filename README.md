@@ -66,7 +66,11 @@ Each venue is completely isolated — its own staff, tasks, points, theme, and l
 
 ```
 bar-chores-app/
-├── Documentation/          # Detailed spec + seed data
+├── docs/
+│   ├── specs/              # Product spec (.docx)
+│   ├── api/                # API reference, seed data definitions
+│   ├── architecture/       # Technical reference, environments, flowcharts
+│   └── plans/              # Implementation plans
 ├── src/
 │   ├── components/         # Layouts (admin, staff, shared)
 │   ├── context/            # AuthContext, VenueContext
@@ -106,7 +110,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 
 ## Database Seeding
 
-Test data is defined in `Documentation/SEED_DATA.md` — 2 venues, 2 admins, 10 staff, 40 tasks.
+Test data is defined in `docs/api/seed-data.md` — 2 venues, 2 admins, 10 staff, 40 tasks.
 
 ```bash
 node scripts/seed-reset.mjs
