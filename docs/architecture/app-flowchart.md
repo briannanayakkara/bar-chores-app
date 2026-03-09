@@ -452,7 +452,7 @@ erDiagram
         text description
         int points
         bool requires_photo
-        bool is_recurring
+        text frequency
         bool is_active
         text approval_status
     }

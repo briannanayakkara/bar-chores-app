@@ -850,7 +850,7 @@ const diagrams = [
       'S_PIN': { title: 'Reset PIN', body: 'Modal prompt for new PIN. Hashed server-side via Edge Function.' },
       'S_DEL': { title: 'Delete Staff', body: 'Confirmation dialog then deletes profile. Cascades to assignments, points, rewards.' },
       'TASK': { title: 'Task Management', body: '/admin/tasks — Create, activate/deactivate tasks. Review staff proposals.' },
-      'T_CREATE': { title: 'Create Task', body: 'Form: title, description, points (number), requires_photo (auto-enabled if points >= 500), is_recurring.' },
+      'T_CREATE': { title: 'Create Task', body: 'Form: title, description, points (number), requires_photo (auto-enabled if points >= 500), frequency dropdown (once/daily/weekly/monthly).' },
       'T_TOGGLE': { title: 'Toggle Active/Inactive', body: 'Sets is_active flag. Inactive tasks don\'t appear in staff\'s available task list.' },
       'T_PROPOSE': { title: 'Staff Proposals', body: 'Tasks with approval_status=proposed. Admin must set point value before approving.' },
       'T_ACTIVE': { title: 'Task Approved', body: 'approval_status set to active, is_active=true. Now visible to staff.' },
@@ -922,8 +922,8 @@ const diagrams = [
     PointsAwarded --> [*]
 
     note right of PointsAwarded
-        If is_recurring = true
-        pg_cron resets nightly
+        If frequency = daily/weekly/monthly
+        pg_cron resets per frequency
     end note`,
     tooltips: {
       'Proposed': { title: 'Proposed', body: 'Staff suggested this task. Awaiting admin review. Admin must set point value before approving.' },
@@ -1211,7 +1211,7 @@ const diagrams = [
         text description
         integer points
         boolean requires_photo
-        boolean is_recurring
+        text frequency
         boolean is_active
         uuid created_by FK
         uuid proposed_by FK

@@ -4,7 +4,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+import bcrypt from 'https://esm.sh/bcryptjs@2.4.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -124,7 +124,7 @@ serve(async (req) => {
           return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
         }
 
-        const pinHash = await bcrypt.hash(String(pin), await bcrypt.genSalt(10));
+        const pinHash = bcrypt.hashSync(String(pin), 10);
 
         // Check for duplicate username in this venue
         const { data: existing } = await adminClient
@@ -188,7 +188,7 @@ serve(async (req) => {
           if (pin.length < 4) {
             return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
           }
-          updates.pin_hash = await bcrypt.hash(String(pin), await bcrypt.genSalt(10));
+          updates.pin_hash = bcrypt.hashSync(String(pin), 10);
         }
 
         const { error: updateErr } = await adminClient
@@ -214,7 +214,7 @@ serve(async (req) => {
           return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
         }
 
-        const pinHash = await bcrypt.hash(String(new_pin), await bcrypt.genSalt(10));
+        const pinHash = bcrypt.hashSync(String(new_pin), 10);
         const { error: updateErr } = await adminClient
           .from('profiles')
           .update({ pin_hash: pinHash })
@@ -606,7 +606,7 @@ serve(async (req) => {
           });
           if (authErr || !authData.user) continue;
 
-          const pinHash = await bcrypt.hash(String(staff.pin), await bcrypt.genSalt(10));
+          const pinHash = bcrypt.hashSync(String(staff.pin), 10);
           await adminClient.from('profiles').insert({
             id: authData.user.id,
             venue_id: staff.venue_id,
@@ -631,49 +631,49 @@ serve(async (req) => {
 
         // Step 7: Seed tasks
         const lgdTasks = [
-          { title: 'Open Bar Setup', description: 'Set up all bottles, garnishes and tools before opening', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Polish All Glassware', description: 'Polish every glass and ensure no smudges or watermarks', points: 75, requires_photo: false, is_recurring: true },
-          { title: 'Clean Coffee Machine', description: 'Full clean and descale of the espresso machine', points: 150, requires_photo: true, is_recurring: true },
-          { title: 'Restock Beer Fridge', description: 'Ensure all beers are stocked, rotated and cold', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Wipe Down All Surfaces', description: 'Clean and sanitise all bar surfaces and countertops', points: 80, requires_photo: false, is_recurring: true },
-          { title: 'Mop Bar Floor', description: 'Mop the entire bar floor including behind the bar', points: 120, requires_photo: false, is_recurring: true },
-          { title: 'Empty All Bins', description: 'Empty all bins and replace liners throughout the venue', points: 80, requires_photo: false, is_recurring: true },
-          { title: 'Deep Clean Ice Machine', description: 'Full clean and sanitise the ice machine', points: 500, requires_photo: true, is_recurring: false },
-          { title: 'Restock Spirits', description: 'Check and restock all spirit levels on the back bar', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Clean Fridges', description: 'Full clean of all bar fridges inside and out', points: 600, requires_photo: true, is_recurring: false },
-          { title: 'Check and Restock Mixers', description: 'Ensure all mixers, sodas and juices are stocked', points: 75, requires_photo: false, is_recurring: true },
-          { title: 'Organise Stock Room', description: 'Organise and label all stock in the back room', points: 400, requires_photo: true, is_recurring: false },
-          { title: 'Clean Toilets', description: 'Full clean of all customer toilets', points: 150, requires_photo: true, is_recurring: true },
-          { title: 'Wipe Down Menus', description: 'Clean and sanitise all menus and table cards', points: 50, requires_photo: false, is_recurring: true },
-          { title: 'End of Night Cash Up', description: 'Count the till and prepare the cash up report', points: 200, requires_photo: false, is_recurring: true },
-          { title: 'Close Bar Checklist', description: 'Complete the full closing checklist for the bar', points: 150, requires_photo: false, is_recurring: true },
-          { title: 'Restock Paper Products', description: 'Restock napkins, straws, coasters throughout', points: 60, requires_photo: false, is_recurring: true },
-          { title: 'Check Expiry Dates', description: 'Check all perishables and remove anything expired', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Deep Clean Drains', description: 'Full clean of all bar drains with cleaning solution', points: 700, requires_photo: true, is_recurring: false },
-          { title: 'Wash Bar Mats', description: 'Remove, wash and dry all rubber bar mats', points: 200, requires_photo: true, is_recurring: false },
+          { title: 'Open Bar Setup', description: 'Set up all bottles, garnishes and tools before opening', points: 100, requires_photo: false, frequency: 'daily' },
+          { title: 'Polish All Glassware', description: 'Polish every glass and ensure no smudges or watermarks', points: 75, requires_photo: false, frequency: 'daily' },
+          { title: 'Clean Coffee Machine', description: 'Full clean and descale of the espresso machine', points: 150, requires_photo: true, frequency: 'daily' },
+          { title: 'Restock Beer Fridge', description: 'Ensure all beers are stocked, rotated and cold', points: 100, requires_photo: false, frequency: 'daily' },
+          { title: 'Wipe Down All Surfaces', description: 'Clean and sanitise all bar surfaces and countertops', points: 80, requires_photo: false, frequency: 'daily' },
+          { title: 'Mop Bar Floor', description: 'Mop the entire bar floor including behind the bar', points: 120, requires_photo: false, frequency: 'daily' },
+          { title: 'Empty All Bins', description: 'Empty all bins and replace liners throughout the venue', points: 80, requires_photo: false, frequency: 'daily' },
+          { title: 'Deep Clean Ice Machine', description: 'Full clean and sanitise the ice machine', points: 500, requires_photo: true, frequency: 'monthly' },
+          { title: 'Restock Spirits', description: 'Check and restock all spirit levels on the back bar', points: 100, requires_photo: false, frequency: 'daily' },
+          { title: 'Clean Fridges', description: 'Full clean of all bar fridges inside and out', points: 600, requires_photo: true, frequency: 'monthly' },
+          { title: 'Check and Restock Mixers', description: 'Ensure all mixers, sodas and juices are stocked', points: 75, requires_photo: false, frequency: 'daily' },
+          { title: 'Organise Stock Room', description: 'Organise and label all stock in the back room', points: 400, requires_photo: true, frequency: 'weekly' },
+          { title: 'Clean Toilets', description: 'Full clean of all customer toilets', points: 150, requires_photo: true, frequency: 'daily' },
+          { title: 'Wipe Down Menus', description: 'Clean and sanitise all menus and table cards', points: 50, requires_photo: false, frequency: 'daily' },
+          { title: 'End of Night Cash Up', description: 'Count the till and prepare the cash up report', points: 200, requires_photo: false, frequency: 'daily' },
+          { title: 'Close Bar Checklist', description: 'Complete the full closing checklist for the bar', points: 150, requires_photo: false, frequency: 'daily' },
+          { title: 'Restock Paper Products', description: 'Restock napkins, straws, coasters throughout', points: 60, requires_photo: false, frequency: 'daily' },
+          { title: 'Check Expiry Dates', description: 'Check all perishables and remove anything expired', points: 100, requires_photo: false, frequency: 'weekly' },
+          { title: 'Deep Clean Drains', description: 'Full clean of all bar drains with cleaning solution', points: 700, requires_photo: true, frequency: 'monthly' },
+          { title: 'Wash Bar Mats', description: 'Remove, wash and dry all rubber bar mats', points: 200, requires_photo: true, frequency: 'weekly' },
         ];
 
         const kokoTasks = [
-          { title: 'Open Venue Setup', description: 'Set up all areas before doors open', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Sound System Check', description: 'Test all speakers, mics and sound levels', points: 150, requires_photo: false, is_recurring: true },
-          { title: 'Clean DJ Booth', description: 'Wipe down DJ booth, controller and equipment', points: 200, requires_photo: true, is_recurring: true },
-          { title: 'Restock Bar Fridges', description: 'Stock all fridges with drinks and check rotation', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Polish Bar Surfaces', description: 'Clean and polish all bar surfaces to a shine', points: 80, requires_photo: false, is_recurring: true },
-          { title: 'Set Up VIP Area', description: 'Arrange VIP seating, bottles and table setup', points: 150, requires_photo: false, is_recurring: true },
-          { title: 'Mop Dance Floor', description: 'Mop and clean the entire dance floor area', points: 120, requires_photo: false, is_recurring: true },
-          { title: 'Empty All Bins', description: 'Empty all bins and replace liners', points: 80, requires_photo: false, is_recurring: true },
-          { title: 'Restock Spirits and Mixers', description: 'Check and restock all spirits and mixers', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Deep Clean Toilets', description: 'Full deep clean of all toilets and restrooms', points: 200, requires_photo: true, is_recurring: true },
-          { title: 'Check Lighting Rig', description: 'Test all lights, strobes and effects', points: 150, requires_photo: false, is_recurring: true },
-          { title: 'Clean Ice Machines', description: 'Full clean and sanitise all ice machines', points: 500, requires_photo: true, is_recurring: false },
-          { title: 'Organise Back of House', description: 'Clean and organise the entire back of house area', points: 400, requires_photo: true, is_recurring: false },
-          { title: 'Wipe Down All Seating', description: 'Clean and sanitise all seats, booths and surfaces', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Restock Coat Check', description: 'Organise and restock coat check area', points: 75, requires_photo: false, is_recurring: true },
-          { title: 'End of Night Sweep', description: 'Full sweep and mop of all areas after closing', points: 150, requires_photo: false, is_recurring: true },
-          { title: 'Cash Up and Reports', description: 'Complete till count and nightly reports', points: 200, requires_photo: false, is_recurring: true },
-          { title: 'Deep Clean Bar Fridges', description: 'Full internal clean of all bar fridges', points: 600, requires_photo: true, is_recurring: false },
-          { title: 'Check Fire Exits', description: 'Check all fire exits are clear and signage is correct', points: 100, requires_photo: false, is_recurring: true },
-          { title: 'Restock Paper and Sundries', description: 'Restock napkins, straws, coasters, toilet paper', points: 60, requires_photo: false, is_recurring: true },
+          { title: 'Open Venue Setup', description: 'Set up all areas before doors open', points: 100, requires_photo: false, frequency: 'daily' },
+          { title: 'Sound System Check', description: 'Test all speakers, mics and sound levels', points: 150, requires_photo: false, frequency: 'daily' },
+          { title: 'Clean DJ Booth', description: 'Wipe down DJ booth, controller and equipment', points: 200, requires_photo: true, frequency: 'daily' },
+          { title: 'Restock Bar Fridges', description: 'Stock all fridges with drinks and check rotation', points: 100, requires_photo: false, frequency: 'daily' },
+          { title: 'Polish Bar Surfaces', description: 'Clean and polish all bar surfaces to a shine', points: 80, requires_photo: false, frequency: 'daily' },
+          { title: 'Set Up VIP Area', description: 'Arrange VIP seating, bottles and table setup', points: 150, requires_photo: false, frequency: 'daily' },
+          { title: 'Mop Dance Floor', description: 'Mop and clean the entire dance floor area', points: 120, requires_photo: false, frequency: 'daily' },
+          { title: 'Empty All Bins', description: 'Empty all bins and replace liners', points: 80, requires_photo: false, frequency: 'daily' },
+          { title: 'Restock Spirits and Mixers', description: 'Check and restock all spirits and mixers', points: 100, requires_photo: false, frequency: 'daily' },
+          { title: 'Deep Clean Toilets', description: 'Full deep clean of all toilets and restrooms', points: 200, requires_photo: true, frequency: 'daily' },
+          { title: 'Check Lighting Rig', description: 'Test all lights, strobes and effects', points: 150, requires_photo: false, frequency: 'daily' },
+          { title: 'Clean Ice Machines', description: 'Full clean and sanitise all ice machines', points: 500, requires_photo: true, frequency: 'monthly' },
+          { title: 'Organise Back of House', description: 'Clean and organise the entire back of house area', points: 400, requires_photo: true, frequency: 'weekly' },
+          { title: 'Wipe Down All Seating', description: 'Clean and sanitise all seats, booths and surfaces', points: 100, requires_photo: false, frequency: 'daily' },
+          { title: 'Restock Coat Check', description: 'Organise and restock coat check area', points: 75, requires_photo: false, frequency: 'daily' },
+          { title: 'End of Night Sweep', description: 'Full sweep and mop of all areas after closing', points: 150, requires_photo: false, frequency: 'daily' },
+          { title: 'Cash Up and Reports', description: 'Complete till count and nightly reports', points: 200, requires_photo: false, frequency: 'daily' },
+          { title: 'Deep Clean Bar Fridges', description: 'Full internal clean of all bar fridges', points: 600, requires_photo: true, frequency: 'monthly' },
+          { title: 'Check Fire Exits', description: 'Check all fire exits are clear and signage is correct', points: 100, requires_photo: false, frequency: 'weekly' },
+          { title: 'Restock Paper and Sundries', description: 'Restock napkins, straws, coasters, toilet paper', points: 60, requires_photo: false, frequency: 'daily' },
         ];
 
         // We need a created_by for tasks — use the first admin profile for each venue

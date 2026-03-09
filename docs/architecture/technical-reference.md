@@ -116,7 +116,7 @@ A multi-venue, mobile-first web app that turns bar staff chores into a points-ba
 | description | text | Optional instructions |
 | points | int | Points awarded on completion |
 | requires_photo | boolean | Auto-true if points >= 500 |
-| is_recurring | boolean | Resets daily at midnight via pg_cron |
+| frequency | text | `once`, `daily`, `weekly`, `monthly` — recurring tasks reset via pg_cron |
 | is_active | boolean | Default true |
 | created_by | uuid FK | Admin profile ID |
 | created_at | timestamptz | Auto-set |
