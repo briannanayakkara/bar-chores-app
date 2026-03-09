@@ -140,7 +140,7 @@ When the DEV Supabase project is created run these in order:
 - [ ] Run `supabase/migrations/004_cron.sql`
 - [ ] Deploy Edge Function: `staff-auth`
 - [ ] Create storage buckets: `task-photos`, `venue-assets`, `profile-pictures`
-- [ ] Seed dummy data from `Documentation/SEED_DATA.md`
+- [ ] Seed dummy data from `docs/api/seed-data.md`
 - [ ] Set super admin user in Auth
 - [ ] Turn off email confirmations in Auth settings
 - [ ] Set Site URL to dev Vercel URL in Auth → URL Configuration

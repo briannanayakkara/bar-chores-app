@@ -360,10 +360,17 @@ Avatars also appear on: staff dashboard header, live activity feed, admin user m
 
 ```
 bar-chores-app/
-├── Documentation/
-│   ├── README.md               ← this file
-│   ├── SEED_DATA.md            ← test data for seeding
-│   └── bar_chores_spec_v5.docx ← full detailed spec
+├── docs/
+│   ├── architecture/
+│   │   ├── technical-reference.md  ← this file
+│   │   ├── environments.md         ← dev/prod setup
+│   │   └── app-flowchart.md        ← Mermaid diagrams
+│   ├── api/
+│   │   ├── api.md                  ← Edge Functions + REST API
+│   │   └── seed-data.md            ← test data for seeding
+│   ├── specs/
+│   │   └── bar-chores-spec-v5.docx ← full detailed spec
+│   └── plans/                      ← implementation plans
 ├── scripts/
 │   └── seed-reset.mjs          ← database reset & seed script
 ├── src/
@@ -424,7 +431,7 @@ The app runs in two separate environments — **Production** and **Development**
 - Vite auto-loads the correct `.env` file based on build mode
 - `.env.example` is committed as a safe template — actual env files are gitignored
 
-See **[Documentation/ENVIRONMENTS.md](ENVIRONMENTS.md)** for full credentials, Vercel setup, CI/CD pipelines, and the DEV database setup checklist.
+See **[environments.md](environments.md)** for full credentials, Vercel setup, CI/CD pipelines, and the DEV database setup checklist.
 
 ---
 
@@ -440,4 +447,4 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 
 ---
 
-*Full detailed specification available in `Documentation/bar_chores_spec_v5.docx`*
+*Full detailed specification available in `docs/specs/bar-chores-spec-v5.docx`*
