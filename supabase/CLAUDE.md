@@ -32,7 +32,7 @@ Tier system:
 - Error responses: HTTP 200 with `{ error: "..." }` in body (supabase.functions.invoke limitation)
 - Auth: validate Authorization header, look up caller profile for role check
 - Service role key: `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')`
-- bcrypt: `hashSync(pin, 10)` for creation, `compareSync(pin, hash)` for verification
+- bcrypt: `await bcrypt.hash(String(pin), await bcrypt.genSalt(10))` for creation, `await bcrypt.compare(String(pin), hash)` for verification (async only — hashSync crashes on Deno Deploy)
 
 ## Auth Handling
 

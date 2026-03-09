@@ -124,7 +124,7 @@ serve(async (req) => {
           return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
         }
 
-        const pinHash = bcrypt.hashSync(pin, 10);
+        const pinHash = await bcrypt.hash(String(pin), await bcrypt.genSalt(10));
 
         // Check for duplicate username in this venue
         const { data: existing } = await adminClient
@@ -188,7 +188,7 @@ serve(async (req) => {
           if (pin.length < 4) {
             return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
           }
-          updates.pin_hash = bcrypt.hashSync(pin, 10);
+          updates.pin_hash = await bcrypt.hash(String(pin), await bcrypt.genSalt(10));
         }
 
         const { error: updateErr } = await adminClient
@@ -214,7 +214,7 @@ serve(async (req) => {
           return jsonResponse({ error: 'PIN must be at least 4 digits' }, 400);
         }
 
-        const pinHash = bcrypt.hashSync(new_pin, 10);
+        const pinHash = await bcrypt.hash(String(new_pin), await bcrypt.genSalt(10));
         const { error: updateErr } = await adminClient
           .from('profiles')
           .update({ pin_hash: pinHash })
