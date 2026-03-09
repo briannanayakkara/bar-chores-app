@@ -27,5 +27,8 @@ npm-debug.log*
 
 .vercel
 
-# Scripts with secrets
-scripts/
+# Claude Code local settings (personal permissions — don't commit)
+.claude/settings.local.json
+
+# Scripts with secrets (root-level only)
+/scripts/
