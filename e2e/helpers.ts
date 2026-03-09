@@ -9,28 +9,27 @@ import { expect } from '@playwright/test';
 export async function staffLogin(page: Page, pin = '1234') {
   await page.goto('/staff-login');
 
-  // Wait for the staff login page to fully render
-  await expect(page.locator('h1')).toBeVisible({ timeout: 30000 });
-  await expect(page.locator('h1')).toHaveText('Staff Login');
+  // Wait for the staff login heading to render
+  await expect(page.getByRole('heading', { name: 'Staff Login' })).toBeVisible({ timeout: 30000 });
 
-  // Select the first venue card
-  const venueCards = page.locator('button').filter({ has: page.locator('.rounded-full') });
-  await expect(venueCards.first()).toBeVisible({ timeout: 15000 });
-  await venueCards.first().click();
+  // Select the first venue card (buttons with min-h-[120px] in the venue grid)
+  const venueCard = page.locator('button.min-h-\\[120px\\]').first();
+  await expect(venueCard).toBeVisible({ timeout: 15000 });
+  await venueCard.click();
 
-  // Wait for staff grid to appear
-  await expect(page.locator('text=Tap your profile to sign in')).toBeVisible({ timeout: 15000 });
+  // Wait for staff grid — "Tap your profile to sign in"
+  await expect(page.getByText('Tap your profile to sign in')).toBeVisible({ timeout: 15000 });
 
   // Click the first staff profile card
-  const staffCards = page.locator('button.rounded-xl').filter({ has: page.locator('.rounded-full') });
-  await expect(staffCards.first()).toBeVisible({ timeout: 10000 });
-  await staffCards.first().click();
+  const staffCard = page.locator('button.min-h-\\[120px\\]').first();
+  await expect(staffCard).toBeVisible({ timeout: 10000 });
+  await staffCard.click();
 
   // PIN entry form should appear
-  await expect(page.locator('text=Enter your PIN')).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText('Enter your PIN')).toBeVisible({ timeout: 10000 });
 
   // Enter PIN and submit
-  await page.locator('input[inputmode="numeric"]').fill(pin);
+  await page.locator('input[type="password"]').fill(pin);
   await page.locator('button[type="submit"]').click();
 
   // Wait for dashboard

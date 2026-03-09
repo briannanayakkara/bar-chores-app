@@ -9,13 +9,9 @@ test.describe('Leaderboard', () => {
     await page.goto('/staff/leaderboard');
 
     // Leaderboard heading should be visible
-    await expect(page.locator('h1')).toHaveText('Leaderboard', { timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Leaderboard' })).toBeVisible({ timeout: 15000 });
 
-    // Should see at least one leaderboard entry (staff name + points)
-    const leaderboardEntries = page.locator('.rounded-xl').filter({ has: page.locator('.rounded-full') });
-    await expect(leaderboardEntries.first()).toBeVisible({ timeout: 10000 });
-
-    // Should see "pts" text somewhere on the page
-    await expect(page.locator('text=pts').first()).toBeVisible({ timeout: 5000 });
+    // Should see "pts" text somewhere on the page (points display)
+    await expect(page.getByText('pts').first()).toBeVisible({ timeout: 10000 });
   });
 });

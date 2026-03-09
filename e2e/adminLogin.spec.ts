@@ -5,8 +5,7 @@ test.describe('Admin Login', () => {
     await page.goto('/login');
 
     // Wait for the login page to fully render
-    await expect(page.locator('h1')).toBeVisible({ timeout: 30000 });
-    await expect(page.locator('h1')).toHaveText('Admin Login');
+    await expect(page.getByRole('heading', { name: 'Admin Login' })).toBeVisible({ timeout: 30000 });
 
     // Fill in email and password
     await page.locator('input[type="email"]').fill('brian@rekom.dk');
@@ -21,7 +20,7 @@ test.describe('Admin Login', () => {
     // Verify we're on the dashboard
     await expect(page).toHaveURL(/\/admin\/dashboard/);
 
-    // Dashboard heading should be visible
-    await expect(page.locator('h1')).toHaveText('Dashboard', { timeout: 10000 });
+    // Dashboard heading should be visible (use getByRole to avoid multiple h1 matches)
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10000 });
   });
 });
