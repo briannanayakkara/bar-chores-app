@@ -95,8 +95,9 @@ export async function seedTestVenue(): Promise<TestContext> {
     });
     if (staffAuthErr || !staffAuth.user) throw new Error(`Failed to create staff auth: ${staffAuthErr?.message}`);
 
-    const { data: bcryptModule } = await import('bcryptjs');
-    const pinHash = bcryptModule.hashSync(`${1000 + num}`, 10);
+    const bcryptModule = await import('bcryptjs');
+    const bcrypt = bcryptModule.default || bcryptModule;
+    const pinHash = bcrypt.hashSync(`${1000 + num}`, 10);
 
     const { error: staffProfileErr } = await client.from('profiles').insert({
       id: staffAuth.user.id,
