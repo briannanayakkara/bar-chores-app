@@ -48,7 +48,7 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        run: npx vitest run src/tests/unit --reporter=verbose 2>&1 | tee test-output.txt
+        run: NO_COLOR=1 npx vitest run src/tests/unit --reporter=verbose 2>&1 | tee test-output.txt
 
       - name: Test summary
         if: always()
