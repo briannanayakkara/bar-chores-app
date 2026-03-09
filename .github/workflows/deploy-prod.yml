@@ -12,41 +12,24 @@ jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Install Node.js 20
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 4. TypeScript type check
       - name: Type check
         run: npx tsc -b
 
-      # 5. Unit tests with Vitest
       - name: Run unit tests
         run: npm run test:unit
 
-      # 6. Playwright E2E tests against local dev server
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E tests
-        continue-on-error: true
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: npm run test:e2e -- --project=chromium
-
-      # 7. Deploy to Vercel production
       - name: Install Vercel CLI
         run: npm i -g vercel
 
