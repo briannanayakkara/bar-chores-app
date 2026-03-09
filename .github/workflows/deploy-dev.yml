@@ -9,7 +9,9 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
-  build-and-deploy:
+  # ── Stage 1: Build ──────────────────────────────────────────────
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,8 +26,55 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check
+      - name: TypeScript type check
         run: npx tsc -b
+
+  # ── Stage 2: Test ───────────────────────────────────────────────
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: NO_COLOR=1 npx vitest run src/tests/unit --reporter=verbose 2>&1 | tee test-output.txt
+
+      - name: Test summary
+        if: always()
+        run: |
+          echo "## Unit Test Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -20 test-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ── Stage 3: Deploy ─────────────────────────────────────────────
+  deploy:
+    name: Deploy
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Install Vercel CLI
         run: npm i -g vercel
@@ -45,7 +94,8 @@ jobs:
       - name: Alias to stable dev URL
         run: vercel alias ${{ steps.deploy.outputs.url }} bar-chores-dev.vercel.app --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Print deployment URL
+      - name: Deployment summary
         run: |
-          echo "Deployed to ${{ steps.deploy.outputs.url }}"
-          echo "Stable dev URL: https://bar-chores-dev.vercel.app"
+          echo "## Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Preview URL:** ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Stable URL:** https://bar-chores-dev.vercel.app" >> $GITHUB_STEP_SUMMARY

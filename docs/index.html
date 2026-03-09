@@ -465,7 +465,7 @@
     <svg id="themeIcon" viewBox="0 0 24 24"></svg>
   </button>
   <h1>Bar Chores App</h1>
-  <p>Gamified bar staff task management — Application Flowchart v1.8.5</p>
+  <p>Gamified bar staff task management — Application Flowchart v1.9.0</p>
   <div class="badges">
     <span class="badge badge-sa">Super Admin</span>
     <span class="badge badge-va">Venue Admin</span>
@@ -488,7 +488,7 @@
   <div class="kb-hint"><span class="kb-key">Scroll</span> Zoom</div>
 </div>
 
-<footer>Bar Chores App v1.8.5 &mdash; March 2026</footer>
+<footer>Bar Chores App v1.9.0 &mdash; March 2026</footer>
 
 <!-- Fullscreen modal -->
 <div class="modal-overlay" id="modal">
@@ -1105,7 +1105,7 @@ const diagrams = [
   {
     id: 'environments',
     title: 'Environment & CI/CD Pipeline',
-    desc: 'Two-environment setup: DEV (develop branch → preview URL → DEV Supabase with dummy data) and PROD (main branch → production URL → PROD Supabase with real data). GitHub Actions runs type check + Vercel CLI deploy on every push. Environment controlled by VITE_ENV variable.',
+    desc: 'Two-environment setup: DEV (develop branch → preview URL → DEV Supabase with dummy data) and PROD (main branch → production URL → PROD Supabase with real data). GitHub Actions runs Build → Test → Deploy pipeline on every push. Environment controlled by VITE_ENV variable.',
     code: `flowchart TD
     subgraph GIT["Git Repository"]
         FEAT["feature/* branch"] -->|PR| DEV_BR["develop branch"]
@@ -1113,24 +1113,20 @@ const diagrams = [
     end
 
     subgraph CI_DEV["GitHub Actions — Deploy DEV"]
-        DEV_BR --> D1["Checkout + npm ci"]
-        D1 --> D2["Type check: tsc -b"]
-        D2 --> D3["vercel pull --preview"]
-        D3 --> D4["vercel build"]
-        D4 --> D5["vercel deploy --prebuilt"]
+        DEV_BR --> D1["Stage 1: Build<br/>npm ci + tsc -b"]
+        D1 --> D2["Stage 2: Test<br/>Unit Tests (Vitest)"]
+        D2 --> D3["Stage 3: Deploy<br/>vercel build + deploy"]
     end
 
     subgraph CI_PROD["GitHub Actions — Deploy PROD"]
-        MAIN --> P1["Checkout + npm ci"]
-        P1 --> P2["Type check: tsc -b"]
-        P2 --> P3["vercel pull --production"]
-        P3 --> P4["vercel build --prod"]
-        P4 --> P5["vercel deploy --prebuilt --prod"]
+        MAIN --> P1["Stage 1: Build<br/>npm ci + tsc -b"]
+        P1 --> P2["Stage 2: Test<br/>Unit Tests (Vitest)"]
+        P2 --> P3["Stage 3: Deploy<br/>vercel build --prod + deploy"]
     end
 
-    D5 --> ALIAS["vercel alias → bar-chores-dev.vercel.app"]
+    D3 --> ALIAS["vercel alias → bar-chores-dev.vercel.app"]
     ALIAS --> DEV_URL["bar-chores-dev.vercel.app<br/>Bar Chores DEV"]
-    P5 --> PROD_URL["bar-chores-app.vercel.app<br/>Bar Chores"]
+    P3 --> PROD_URL["bar-chores-app.vercel.app<br/>Bar Chores"]
 
     DEV_URL --> DEV_SB["DEV Supabase<br/>drwflvxdvwtjzuqxfort<br/>Dummy data"]
     PROD_URL --> PROD_SB["PROD Supabase<br/>sepcdjmwdfjjieaxqoqn<br/>Real data"]
@@ -1142,10 +1138,14 @@ const diagrams = [
       'FEAT': { title: 'Feature Branches', body: 'All development happens on feature/* branches. Each feature gets its own branch from develop.' },
       'DEV_BR': { title: 'develop Branch', body: 'Active development branch. Merging here triggers the DEV CI/CD pipeline. Connected to DEV Supabase.' },
       'MAIN': { title: 'main Branch', body: 'Production branch. Protected — requires PR from develop. Merging here deploys to production.' },
-      'CI_DEV': { title: 'DEV Pipeline', body: 'Triggered on every push to develop. Runs type check, builds with Vercel CLI, deploys to preview environment.' },
-      'CI_PROD': { title: 'PROD Pipeline', body: 'Triggered on every push to main. Runs type check, builds with Vercel CLI, deploys to production environment.' },
-      'D2': { title: 'Type Check Gate', body: 'Runs npx tsc -b before Vercel build. Stops the pipeline if any TypeScript errors exist — prevents broken deploys.' },
-      'P2': { title: 'Type Check Gate', body: 'Same type check for production. No code with TS errors reaches production.' },
+      'CI_DEV': { title: 'DEV Pipeline', body: 'Triggered on every push to develop. 3 stages: Build (type check), Test (unit tests), Deploy (Vercel).' },
+      'CI_PROD': { title: 'PROD Pipeline', body: 'Triggered on every push to main. 3 stages: Build (type check), Test (unit tests), Deploy (Vercel production).' },
+      'D1': { title: 'Build Stage', body: 'Checks out code, installs dependencies with npm ci, runs TypeScript type check (tsc -b). Fails fast on type errors.' },
+      'D2': { title: 'Test Stage', body: 'Runs 53 Vitest unit tests. Results shown in GitHub Step Summary. Blocks deploy on failure.' },
+      'D3': { title: 'Deploy Stage', body: 'Builds with Vercel CLI, deploys to preview, aliases to stable dev URL.' },
+      'P1': { title: 'Build Stage', body: 'Same type check for production. No code with TS errors reaches production.' },
+      'P2': { title: 'Test Stage', body: 'Same 53 unit tests run for production. Results shown in GitHub Step Summary.' },
+      'P3': { title: 'Deploy Stage', body: 'Builds with Vercel CLI in production mode, deploys to production URL.' },
       'ALIAS': { title: 'Stable Dev URL', body: 'GitHub Actions aliases each preview deploy to bar-chores-dev.vercel.app so the dev URL is always the same.' },
       'DEV_URL': { title: 'DEV URL', body: 'bar-chores-dev.vercel.app — stable alias. App title shows "Bar Chores [DEV]". Yellow DEV banner visible.' },
       'PROD_URL': { title: 'Production URL', body: 'bar-chores-app.vercel.app. Clean "Bar Chores" title. No DEV badge.' },
@@ -1254,6 +1254,83 @@ const diagrams = [
         timestamp created_at
     }`,
     tooltips: {},
+  },
+  {
+    id: 'cicd',
+    title: 'CI/CD Pipeline (3 Stages)',
+    desc: 'Every push to develop or main triggers a 3-stage pipeline: Build (type check), Test (53 unit tests via Vitest), Deploy (Vercel). Each stage must pass before the next runs. Test results are shown in GitHub Step Summary.',
+    code: `flowchart TD
+    subgraph BUILD["Stage 1: Build"]
+        B1["Checkout code"] --> B2["npm ci"]
+        B2 --> B3["TypeScript<br/>Type Check (tsc -b)"]
+    end
+
+    subgraph TEST["Stage 2: Test"]
+        B3 --> T1["Run Unit Tests<br/>Vitest (53 tests)"]
+        T1 --> T2["Results in<br/>GitHub Step Summary"]
+    end
+
+    subgraph DEV_DEPLOY["Stage 3: Deploy — develop branch"]
+        T2 --> DD1["vercel pull --preview"]
+        DD1 --> DD2["vercel build"]
+        DD2 --> DD3["vercel deploy --prebuilt"]
+        DD3 --> DD4["vercel alias →<br/>bar-chores-dev.vercel.app"]
+    end
+
+    subgraph PROD_DEPLOY["Stage 3: Deploy — main branch"]
+        T2 --> PD1["vercel pull --production"]
+        PD1 --> PD2["vercel build --prod"]
+        PD2 --> PD3["vercel deploy<br/>--prebuilt --prod"]
+    end
+
+    DD4 --> DEV_RESULT["DEV deployed<br/>bar-chores-dev.vercel.app"]
+    PD3 --> PROD_RESULT["PROD deployed<br/>bar-chores-app.vercel.app"]
+
+    T1 -.->|"Any Fail"| BLOCK["Deploy Blocked"]`,
+    tooltips: {
+      'BUILD': { title: 'Build Stage', body: 'Checks out code, installs dependencies, runs TypeScript type check. Fails fast on type errors.' },
+      'TEST': { title: 'Test Stage', body: 'Runs 53 Vitest unit tests covering business logic. Results displayed in GitHub Actions Step Summary.' },
+      'DEV_DEPLOY': { title: 'DEV Deploy Stage', body: 'Only runs if Build and Test pass. Builds and deploys to Vercel preview, then aliases to stable dev URL.' },
+      'PROD_DEPLOY': { title: 'PROD Deploy Stage', body: 'Only runs if Build and Test pass. Builds and deploys to Vercel production.' },
+      'B3': { title: 'Type Check', body: 'Runs npx tsc -b. Catches TypeScript errors before tests or deploy.' },
+      'T1': { title: 'Unit Tests', body: '53 Vitest tests: points, rewards, PIN, task completion, redemption codes, color, and date utilities. No database needed.' },
+      'T2': { title: 'Test Summary', body: 'Test results are written to GitHub Step Summary as a formatted markdown code block.' },
+      'BLOCK': { title: 'Blocked', body: 'If any test fails, the Deploy stage is skipped entirely. Fix the tests before merging.' },
+      'DEV_RESULT': { title: 'DEV URL', body: 'bar-chores-dev.vercel.app — stable alias pointing to the latest preview deploy.' },
+      'PROD_RESULT': { title: 'PROD URL', body: 'bar-chores-app.vercel.app — production deployment.' },
+    },
+  },
+  {
+    id: 'reward-flow',
+    title: 'Reward Reservation & Approval Flow',
+    desc: 'When staff requests a reward, points are reserved (not immediately deducted). Admin approves to confirm the deduction and generate a redemption code, or rejects to restore the points.',
+    code: `flowchart TD
+    A["Staff views<br/>Available Points"] --> B{"Enough<br/>points?"}
+    B -.->|"No"| C["Button disabled"]
+    B ==>|"Yes"| D["Staff requests<br/>reward"]
+    D --> E["Insert reward_redemptions<br/>status=pending<br/>points_reserved=cost"]
+    E --> F["Available points<br/>reduced immediately"]
+    F --> G{"Admin<br/>decision"}
+    G ==>|"Approve"| H["Insert negative<br/>points_ledger entry"]
+    H --> I["Trigger updates<br/>profiles.points_total"]
+    I --> J["Generate code<br/>e.g. DRK-X7K2"]
+    J --> K["Staff sees<br/>redemption code"]
+    G -.->|"Reject"| L["status=rejected<br/>points freed"]
+    L --> M["Available points<br/>restored"]
+
+    style E fill:#1a365d,stroke:#3b82f6
+    style H fill:#064e3b,stroke:#34d399
+    style L fill:#4c0519,stroke:#fb7185`,
+    tooltips: {
+      'A': { title: 'Available Points', body: 'Calculated as: points_total minus sum of points_reserved on all pending redemptions.' },
+      'D': { title: 'Reward Request', body: 'Staff taps a reward button. A reward_redemptions row is inserted with status=pending.' },
+      'E': { title: 'Reservation', body: 'points_reserved is set to the reward cost. This does NOT insert a ledger entry yet.' },
+      'F': { title: 'Immediate Effect', body: 'Available points are recalculated including the new reservation. UI updates in real-time.' },
+      'H': { title: 'Ledger Entry', body: 'On approval, a negative delta is inserted into points_ledger, which fires the trigger.' },
+      'I': { title: 'Points Trigger', body: 'Postgres trigger on points_ledger insert updates profiles.points_total automatically.' },
+      'J': { title: 'Redemption Code', body: 'Unique code like DRK-X7K2. Staff shows this at the bar to claim their reward.' },
+      'L': { title: 'Rejection', body: 'status changes to rejected. No ledger entry. Reserved points are freed.' },
+    },
   },
 ];
 

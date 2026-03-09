@@ -32,3 +32,9 @@ npm-debug.log*
 
 # Scripts with secrets (root-level only)
 /scripts/
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+.claude/coverage-report/
